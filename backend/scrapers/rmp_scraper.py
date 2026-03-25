@@ -2,7 +2,7 @@ import sys
 import time
 import requests
 
-SCHOOL_ID = "U2Nob29sLTcxMQ=="
+SCHOOL_ID = "U2Nob29sLTkyNg=="  # SIUE (Southern Illinois University - Edwardsville), LegacyID: 926
 GRAPHQL_URL = "https://www.ratemyprofessors.com/graphql"
 PAGE_SIZE = 20
 
