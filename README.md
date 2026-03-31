@@ -1,5 +1,7 @@
 # Cougar Planner
 
+**Live site: [cougarplanner.com](https://cougarplanner.com)**
+
 A course planning tool for SIUE (Southern Illinois University Edwardsville) students. Search courses, view professor ratings from RateMyProfessors, check seat availability, and plan your schedule — all in one place.
 
 ---
@@ -47,7 +49,7 @@ cougar-planner/
 
 ### 1. Clone and install dependencies
 ```bash
-git clone https://github.com/your-username/cougar-planner.git
+git clone https://github.com/VarnoxL/cougar-planner.git
 cd cougar-planner/backend
 pip install -r requirements.txt
 ```
