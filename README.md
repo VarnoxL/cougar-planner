@@ -56,8 +56,7 @@ pip install -r requirements.txt
 Create `backend/.env`:
 ```
 DATABASE_URL=postgresql://postgres:password@localhost/cougar_planner
-SIUE_USERNAME=your_cougarnet_id
-SIUE_PASSWORD=your_password
+SIUE_TERM=202540
 ```
 
 ### 3. Set up the database
@@ -70,7 +69,7 @@ python -c "from app import create_app, db; app = create_app(); app.app_context()
 # Scrape professor data from RateMyProfessors
 python -m scrapers.rmp_scraper
 
-# Scrape course/section data from SIUE Banner (requires CougarNet login)
+# Scrape course/section data from SIUE Banner
 python -m scrapers.siue_scraper
 ```
 
