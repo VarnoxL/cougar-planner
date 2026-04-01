@@ -80,10 +80,27 @@ def fetch_courses(session, subject):
 
 def parse_section(section):
     faculty = section["faculty"]
-    professor = faculty[0]["displayName"] if faculty else "Unknown"
+    raw_name = faculty[0]["displayName"] if faculty else "Unknown"
+    if ", " in raw_name:
+        last, first = raw_name.split(", ", 1)
+        professor = f"{first} {last}"
+    else:
+        professor = raw_name
 
-    meetings = section["meetingsFaculty"]
-    meeting_time = meetings[0]["meetingTime"] if meetings else {}
+    meetings = []
+    for m in section.get("meetingsFaculty", []):
+        mt = m.get("meetingTime", {})
+        meetings.append({
+            "start_time": mt.get("beginTime"),
+            "end_time": mt.get("endTime"),
+            "building": mt.get("building"),
+            "room": mt.get("room"),
+            "monday": mt.get("monday"),
+            "tuesday": mt.get("tuesday"),
+            "wednesday": mt.get("wednesday"),
+            "thursday": mt.get("thursday"),
+            "friday": mt.get("friday"),
+        })
 
     return {
         "crn": section["courseReferenceNumber"],
@@ -94,15 +111,7 @@ def parse_section(section):
         "capacity": section["maximumEnrollment"],
         "enrolled": section["enrollment"],
         "professor": professor,
-        "start_time": meeting_time.get("beginTime"),
-        "end_time": meeting_time.get("endTime"),
-        "building": meeting_time.get("building"),
-        "room": meeting_time.get("room"),
-        "monday": meeting_time.get("monday"),
-        "tuesday": meeting_time.get("tuesday"),
-        "wednesday": meeting_time.get("wednesday"),
-        "thursday": meeting_time.get("thursday"),
-        "friday": meeting_time.get("friday"),
+        "meetings": meetings,
     }
 
 def upsert_sections(sections):
@@ -150,17 +159,19 @@ def upsert_sections(sections):
                     db.session.flush()
                     created += 1
 
-                # Upsert Schedule rows (one per day)
+                # Upsert Schedule rows (one per day per meeting slot)
                 Schedule.query.filter_by(section_id=existing.id).delete()
-                for day in ["monday", "tuesday", "wednesday", "thursday", "friday"]:
-                    if data.get(day):
-                        db.session.add(Schedule(
-                            section_id=existing.id,
-                            day=day,
-                            start_time=data["start_time"],
-                            end_time=data["end_time"],
-                            location=f"{data['building']} {data['room']}".strip(),
-                        ))
+                for meeting in data["meetings"]:
+                    location = f"{meeting['building'] or ''} {meeting['room'] or ''}".strip()
+                    for day in ["monday", "tuesday", "wednesday", "thursday", "friday"]:
+                        if meeting.get(day):
+                            db.session.add(Schedule(
+                                section_id=existing.id,
+                                day=day,
+                                start_time=meeting["start_time"],
+                                end_time=meeting["end_time"],
+                                location=location,
+                            ))
 
                 if i % 10 == 0:
                     db.session.commit()

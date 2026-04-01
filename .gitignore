@@ -1,0 +1,32 @@
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Node (if a frontend is ever added)
+node_modules/
+.next/
+dist/
+build/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Databases
+*.db
+*.sqlite3
+
+# Logs
+*.log
