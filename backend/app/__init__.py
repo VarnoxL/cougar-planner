@@ -15,8 +15,14 @@ def create_app():
 
     from .routes.courses import courses_bp
     from .routes.professors import professors_bp
+    from .routes.schedules import schedules_bp
+    from .routes.reviews import reviews_bp
+    from .routes.grade_distributions import grade_distributions_bp
     app.register_blueprint(courses_bp)
     app.register_blueprint(professors_bp)
+    app.register_blueprint(schedules_bp)
+    app.register_blueprint(reviews_bp)
+    app.register_blueprint(grade_distributions_bp)
 
     with app.app_context():
         from . import models
