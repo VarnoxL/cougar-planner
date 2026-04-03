@@ -10,7 +10,10 @@ schedules_bp = Blueprint("schedules", __name__)
 # - Require user_id query param (return 400 if missing)
 # - Return a list of the user's saved schedules
 # - Each item: id, name, semester, created_at, section_count
+@schedules_bp.route("/api/schedules", methods=["GET"])
 def list_schedules():
+    
+
     pass
 
 
