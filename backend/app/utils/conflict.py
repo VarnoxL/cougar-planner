@@ -2,35 +2,40 @@ from ..models import SavedScheduleSection, Section, Schedule
 
 
 def get_conflicts(saved_schedule_id: int, new_section_id: int) -> list:
-    """
-    Check whether a new section conflicts with any section already in a saved schedule.
+    saved_schedule_sections = SavedScheduleSection.query.filter_by(saved_schedule_id=saved_schedule_id).all()
+    if not saved_schedule_sections:
+        return []
 
-    Steps to implement:
-    1. Query all SavedScheduleSection rows for saved_schedule_id to get existing section IDs.
-       If there are none, return [] early — nothing to conflict with.
+    new_schedules = Schedule.query.filter_by(section_id=new_section_id).all()
+    if not new_schedules:
+        return []
 
-    2. Query Schedule rows for new_section_id.
-       If there are none (async/online), return [] early — no times to compare.
+    conflicts = []
 
-    3. For each existing section ID, load its Schedule rows.
-       For each pair of (new_schedule, existing_schedule):
-         - Skip if the days don't match.
-         - Skip if any time value is None or not exactly 4 characters (TBA sections).
-         - Times are stored as zero-padded strings like "0930" or "1300".
-           Two ranges overlap when: new_start < existing_end AND existing_start < new_end
-         - If they overlap, append a dict to a conflicts list.
+    for saved_schedule_section in saved_schedule_sections:
+        saved_schedules = Schedule.query.filter_by(section_id=saved_schedule_section.section_id).all()
+        if not saved_schedules:
+            continue
 
-    4. Return the conflicts list (empty if no conflicts found).
+        for saved_schedule in saved_schedules:
+            for new_sched in new_schedules:
+                if saved_schedule.day != new_sched.day:
+                    continue
 
-    Conflict dict shape:
-    {
-        "conflicting_section_id": int,
-        "conflicting_crn": str,
-        "day": str,
-        "existing_start": str,
-        "existing_end": str,
-        "new_start": str,
-        "new_end": str,
-    }
-    """
-    pass
+                times = [saved_schedule.start_time, saved_schedule.end_time, new_sched.start_time, new_sched.end_time]
+                if any(t is None or len(t) != 4 for t in times):
+                    continue
+
+                if new_sched.start_time < saved_schedule.end_time and saved_schedule.start_time < new_sched.end_time:
+                    section = Section.query.get(saved_schedule_section.section_id)
+                    conflicts.append({
+                        "conflicting_section_id": saved_schedule_section.section_id,
+                        "conflicting_crn": section.crn if section else None,
+                        "day": saved_schedule.day,
+                        "existing_start": saved_schedule.start_time,
+                        "existing_end": saved_schedule.end_time,
+                        "new_start": new_sched.start_time,
+                        "new_end": new_sched.end_time,
+                    })
+
+    return conflicts
