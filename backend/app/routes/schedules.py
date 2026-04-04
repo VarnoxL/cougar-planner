@@ -12,9 +12,21 @@ schedules_bp = Blueprint("schedules", __name__)
 # - Each item: id, name, semester, created_at, section_count
 @schedules_bp.route("/api/schedules", methods=["GET"])
 def list_schedules():
-    
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error" : "user_id is required"}), 400
 
-    pass
+    schedules = SavedSchedule.query.filter_by(user_id=user_id).all()
+    return jsonify([
+        {
+            "id": s.id,
+            "name": s.name,
+            "semester": s.semester,
+            "created_at": s.created_at,
+            "section_count": len(s.saved_schedule_sections),
+        }
+        for s in schedules
+    ])
 
 
 # POST /api/schedules
