@@ -124,7 +124,27 @@ def get_schedule(schedule_id):
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["PATCH"])
 def update_schedule(schedule_id):
     new_schedule = SavedSchedule.query.get_or_404(schedule_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "empty or not JSON"}), 400
+    if "name" in data:
+        new_schedule.name = data.get("name")
+    if "semester" in data:
+        new_schedule.semester = data.get("semester")
+    db.session.commit()
+    return jsonify({
+        "id": new_schedule.id,
+        "user_id": new_schedule.user_id,
+        "name": new_schedule.name,
+        "semester": new_schedule.semester,
+        "created_at": new_schedule.created_at.isoformat() if new_schedule.created_at else None,
+        "section_count": len(new_schedule.saved_schedule_sections),
+    }), 200
     
+    
+
+
+
 
 
 # DELETE /api/schedules/<schedule_id>
@@ -134,6 +154,7 @@ def update_schedule(schedule_id):
 # - Return { "message": "Schedule deleted" }
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["DELETE"])
 def delete_schedule(schedule_id):
+
 
     pass
 
