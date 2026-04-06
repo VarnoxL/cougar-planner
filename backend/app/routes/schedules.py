@@ -64,7 +64,57 @@ def create_schedule():
 # - See courses.py lines 42-49 for how to handle a nullable professor
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["GET"])
 def get_schedule(schedule_id):
-    pass
+    current_schedule = SavedSchedule.query.get_or_404(schedule_id)
+    section_list = []
+    for saved_schedule_section in current_schedule.saved_schedule_sections:
+        section = saved_schedule_section.section
+        professor = None
+        if section.professor:
+            professor = {
+                "id": section.professor.id,
+                "name": section.professor.name,
+                "rating": section.professor.rating,
+                "difficulty": section.professor.difficulty,
+            }
+        section_list.append({
+            "id": section.id,
+            "crn": section.crn,
+            "section_num": section.section_num,
+            "semester": section.semester,
+            "capacity": section.capacity,
+            "enrolled": section.enrolled,
+            "delivery_method": section.delivery_method,
+            "course": {
+                "id": section.course.id,
+                "subject": section.course.subject,
+                "number": section.course.number,
+                "name": section.course.name,
+            },
+            
+            "professor": professor,
+            "schedules": [
+                {
+                    "day": sch.day,
+                    "start_time": sch.start_time,
+                    "end_time": sch.end_time,
+                    "location": sch.location,
+                }
+                for sch in section.schedules
+            ],
+        })
+    return jsonify({
+        "id": current_schedule.id,
+        "name": current_schedule.name,
+        "semester": current_schedule.semester,
+        "created_at": current_schedule.created_at.isoformat() if current_schedule.created_at else None,
+        "sections": section_list,
+    })
+
+
+
+
+
+    
 
 
 # PATCH /api/schedules/<schedule_id>
