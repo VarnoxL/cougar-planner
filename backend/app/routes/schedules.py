@@ -123,7 +123,8 @@ def get_schedule(schedule_id):
 # - Return the updated schedule object
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["PATCH"])
 def update_schedule(schedule_id):
-    pass
+    new_schedule = SavedSchedule.query.get_or_404(schedule_id)
+    
 
 
 # DELETE /api/schedules/<schedule_id>
@@ -133,6 +134,7 @@ def update_schedule(schedule_id):
 # - Return { "message": "Schedule deleted" }
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["DELETE"])
 def delete_schedule(schedule_id):
+
     pass
 
 
