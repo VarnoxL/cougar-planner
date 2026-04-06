@@ -22,7 +22,7 @@ def list_schedules():
             "id": s.id,
             "name": s.name,
             "semester": s.semester,
-            "created_at": s.created_at,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
             "section_count": len(s.saved_schedule_sections),
         }
         for s in schedules
@@ -34,8 +34,27 @@ def list_schedules():
 # - Verify the user exists, return 404 if not
 # - Create and commit a SavedSchedule
 # - Return the new schedule object with 201
+@schedules_bp.route("/api/schedules", methods=["POST"])
 def create_schedule():
-    pass
+    data = request.get_json()
+    user_id = data.get("user_id")
+    name = data.get("name")
+    semester = data.get("semester")
+    if not user_id or not name or not semester:
+        return jsonify({"error": "user_id, name, and semester are required"}), 400
+    User.query.get_or_404(user_id)
+
+    schedule = SavedSchedule(user_id=user_id, name=name, semester=semester)
+    db.session.add(schedule)
+    db.session.commit()
+    return jsonify({
+        "id": schedule.id,
+        "user_id": schedule.user_id,
+        "name": schedule.name,
+        "semester": schedule.semester,
+        "created_at": schedule.created_at.isoformat() if schedule.created_at else None,
+        "section_count": 0,
+    }), 201
 
 
 # GET /api/schedules/<schedule_id>
@@ -43,6 +62,7 @@ def create_schedule():
 # - Return full detail: id, name, semester, created_at, and a sections list
 # - For each SavedScheduleSection → Section, nest: course, professor (nullable!), schedules[]
 # - See courses.py lines 42-49 for how to handle a nullable professor
+@schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["GET"])
 def get_schedule(schedule_id):
     pass
 
@@ -51,6 +71,7 @@ def get_schedule(schedule_id):
 # - Body: any subset of { name, semester }
 # - Only update fields that are present in the request body
 # - Return the updated schedule object
+@schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["PATCH"])
 def update_schedule(schedule_id):
     pass
 
@@ -60,6 +81,7 @@ def update_schedule(schedule_id):
 #     SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id).delete()
 # - Then delete the schedule and commit
 # - Return { "message": "Schedule deleted" }
+@schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["DELETE"])
 def delete_schedule(schedule_id):
     pass
 
@@ -72,6 +94,7 @@ def delete_schedule(schedule_id):
 #     conflicts = get_conflicts(schedule_id, section_id)
 #     If conflicts exist, return 409 with { "error": "Time conflict", "conflicts": [...] }
 # - Otherwise, create the SavedScheduleSection and return 201
+@schedules_bp.route("/api/schedules/<int:schedule_id>/sections", methods=["POST"])
 def add_section(schedule_id):
     pass
 
@@ -80,5 +103,6 @@ def add_section(schedule_id):
 # - Find the SavedScheduleSection by (saved_schedule_id, section_id)
 # - If not found, return 404 with { "error": "Section not in schedule" }
 # - Delete and commit, return { "message": "Section removed" }
+@schedules_bp.route("/api/schedules/<int:schedule_id>/sections/<int:section_id>", methods=["DELETE"])
 def remove_section(schedule_id, section_id):
     pass
