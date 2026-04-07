@@ -65,19 +65,19 @@ def create_review():
     user_id = data.get("user_id")
     professor_id = data.get("professor_id")
     course_id = data.get("course_id")
-    if not user_id or not professor_id or not course_id:
+    if user_id is None or professor_id is None or course_id is None:
         return jsonify({"error": "user_id, professor_id, and course_id not found"}), 400
     User.query.get_or_404(user_id)
     Professor.query.get_or_404(professor_id)
     Course.query.get_or_404(course_id)
     rating = data.get("rating")
     if rating is not None:
-        if rating < 1 or rating > 5:
-            return jsonify({"error": "not within range" }), 400
+        if not isinstance(rating, int) or rating < 1 or rating > 5:
+            return jsonify({"error": "rating must be an integer between 1 and 5"}), 400
     difficulty = data.get("difficulty")
     if difficulty is not None:
-        if difficulty < 1 or difficulty > 5:
-            return jsonify({"error": "difficulty not within range"}), 400
+        if not isinstance(difficulty, int) or difficulty < 1 or difficulty > 5:
+            return jsonify({"error": "difficulty must be an integer between 1 and 5"}), 400
     grade_received = data.get("grade_received")
     comment = data.get("comment")
     semester_taken = data.get("semester_taken")
