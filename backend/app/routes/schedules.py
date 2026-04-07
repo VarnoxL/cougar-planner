@@ -199,4 +199,10 @@ def add_section(schedule_id):
 # - Delete and commit, return { "message": "Section removed" }
 @schedules_bp.route("/api/schedules/<int:schedule_id>/sections/<int:section_id>", methods=["DELETE"])
 def remove_section(schedule_id, section_id):
-    pass
+    section = SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id, section_id=section_id).first()
+    if not section:
+        return jsonify({"error": "Section not in schedule"}), 404
+    db.session.delete(section)
+    db.session.commit()
+    return jsonify({"message": "Section removed"}), 200
+    
