@@ -142,11 +142,6 @@ def update_schedule(schedule_id):
     }), 200
     
     
-
-
-
-
-
 # DELETE /api/schedules/<schedule_id>
 # - No cascade is defined on the model, so manually delete child rows first:
 #     SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id).delete()
@@ -154,9 +149,13 @@ def update_schedule(schedule_id):
 # - Return { "message": "Schedule deleted" }
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["DELETE"])
 def delete_schedule(schedule_id):
+    schedule = SavedSchedule.query.get_or_404(schedule_id)
+    SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id).delete()
+    db.session.delete(schedule)
+    db.session.commit()
+    return jsonify ({ "message": "Schedule deleted" }), 200
 
 
-    pass
 
 
 # POST /api/schedules/<schedule_id>/sections
