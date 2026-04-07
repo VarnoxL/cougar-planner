@@ -168,7 +168,29 @@ def delete_schedule(schedule_id):
 # - Otherwise, create the SavedScheduleSection and return 201
 @schedules_bp.route("/api/schedules/<int:schedule_id>/sections", methods=["POST"])
 def add_section(schedule_id):
-    pass
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "section_id missing"}), 400
+    section_id = data.get("section_id")
+    if not section_id:
+        return jsonify({"error": "value is none"}), 400
+    SavedSchedule.query.get_or_404(schedule_id)
+    Section.query.get_or_404(section_id)
+    duplicate = SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id, section_id=section_id).first()
+    if duplicate:
+        return jsonify({"error": "duplicate found"}), 409
+    conflicts = get_conflicts(schedule_id,section_id)
+    if conflicts:
+        return jsonify({"error": "time conflict found", "conflicts": conflicts }), 409
+    new_section = SavedScheduleSection(saved_schedule_id=schedule_id, section_id=section_id)
+    db.session.add(new_section)
+    db.session.commit()
+    return jsonify({
+        "schedule_id": new_section.saved_schedule_id,
+        "section_id": new_section.section_id
+    }), 201
+
+
 
 
 # DELETE /api/schedules/<schedule_id>/sections/<section_id>
