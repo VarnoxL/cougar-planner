@@ -37,6 +37,8 @@ def list_schedules():
 @schedules_bp.route("/api/schedules", methods=["POST"])
 def create_schedule():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "request body is required"}), 400
     user_id = data.get("user_id")
     name = data.get("name")
     semester = data.get("semester")
