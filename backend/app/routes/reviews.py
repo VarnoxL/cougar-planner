@@ -78,7 +78,12 @@ def create_review():
     if difficulty is not None:
         if not isinstance(difficulty, int) or difficulty < 1 or difficulty > 5:
             return jsonify({"error": "difficulty must be an integer between 1 and 5"}), 400
+    VALID_GRADES = {"A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F", "W"}
     grade_received = data.get("grade_received")
+    if grade_received is not None:
+        grade_received = grade_received.upper().strip()
+        if grade_received not in VALID_GRADES:
+            return jsonify({"error": "grade_received must be one of: A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F, W"}), 400
     comment = data.get("comment")
     semester_taken = data.get("semester_taken")
     review = Review(user_id=user_id, professor_id=professor_id, course_id=course_id, grade_received=grade_received,
