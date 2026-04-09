@@ -20,6 +20,7 @@ A course planning tool for SIUE (Southern Illinois University Edwardsville) stud
 
 - **Backend:** Python, Flask, SQLAlchemy
 - **Database:** PostgreSQL
+- **Auth:** Firebase Authentication
 - **Data Sources:** SIUE Banner course catalog, RateMyProfessors GraphQL API
 
 ---
@@ -36,15 +37,17 @@ cougar-planner/
     │   ├── routes/
     │   │   ├── courses.py          # /api/courses
     │   │   ├── professors.py       # /api/professors
-    │   │   ├── schedules.py        # /api/schedules (in progress)
-    │   │   ├── reviews.py          # /api/reviews (in progress)
-    │   │   └── grade_distributions.py  # /api/grade-distributions (in progress)
+    │   │   ├── schedules.py        # /api/schedules
+    │   │   ├── reviews.py          # /api/reviews
+    │   │   ├── users.py            # /api/users
+    │   │   └── grade_distributions.py  # /api/grade-distributions
     │   └── utils/
-    │       └── conflict.py         # Time conflict detection
+    │       ├── conflict.py         # Time conflict detection
+    │       └── auth.py             # Firebase token verification
     ├── scrapers/
     │   ├── rmp_scraper.py          # Scrapes RateMyProfessors (1,559 SIUE professors)
     │   ├── siue_scraper.py         # Scrapes SIUE Banner 9 API (course catalog)
-    │   └── grade_scraper.py        # Scrapes historical grade distributions
+    │   └── grade_scraper.py        # Reserved for future grade distribution data
     ├── requirements.txt
     └── run.py
 ```
@@ -65,6 +68,7 @@ Create `backend/.env`:
 ```
 DATABASE_URL=postgresql://postgres:password@localhost/cougar_planner
 SIUE_TERM=202540
+FIREBASE_SERVICE_ACCOUNT_JSON=<your service account JSON string>
 ```
 
 ### 3. Set up the database
@@ -79,9 +83,6 @@ python -m scrapers.rmp_scraper
 
 # Scrape course/section data from SIUE Banner
 python -m scrapers.siue_scraper
-
-# Scrape historical grade distributions
-python -m scrapers.grade_scraper
 ```
 
 ### 5. Start the server
@@ -105,29 +106,36 @@ python run.py
 | GET | `/api/professors` | List all professors (filter by `?department=CS` or `?min_rating=4.0`) |
 | GET | `/api/professors/<id>` | Professor detail with RMP stats, courses taught, and reviews |
 
-### Schedules *(in progress)*
+### Schedules
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/schedules` | List user's saved schedules |
 | POST | `/api/schedules` | Create a new saved schedule |
 | GET | `/api/schedules/<id>` | Get a specific schedule |
-| PUT | `/api/schedules/<id>` | Update a schedule |
+| PATCH | `/api/schedules/<id>` | Update a schedule |
 | DELETE | `/api/schedules/<id>` | Delete a schedule |
 | POST | `/api/schedules/<id>/sections` | Add a section to a schedule |
 | DELETE | `/api/schedules/<id>/sections/<section_id>` | Remove a section from a schedule |
 
-### Reviews *(in progress)*
+### Reviews
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/reviews` | List reviews (filter by professor or course) |
 | POST | `/api/reviews` | Create a review |
 | DELETE | `/api/reviews/<id>` | Delete a review |
 
-### Grade Distributions *(in progress)*
+### Grade Distributions
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/grade-distributions` | List grade distributions (filter by professor/course) |
-| GET | `/api/grade-distributions/summary` | Aggregated grade summary |
+| GET | `/api/grade-distributions` | List grade distributions (filter by professor/course/semester) |
+| GET | `/api/grade-distributions/summary` | Aggregated grade summary with percentages |
+
+### Users
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/users` | Register or sync a Firebase user |
+| GET | `/api/users/<id>` | Get user profile |
+| PATCH | `/api/users/<id>` | Update display name or major |
 
 ---
 
@@ -137,8 +145,8 @@ python run.py
 - **Course** — subject, number, name, credits, description
 - **Section** — CRN, section number, semester, capacity, enrollment, delivery method
 - **Schedule** — day, start/end time, location (one row per meeting day)
-- **User** — Firebase auth, major
+- **User** — Firebase UID, email, display name, major
 - **SavedSchedule** — user's saved course selections
-- **Review** — user review of a professor for a specific course
+- **Review** — user review of a professor for a specific course (rating, difficulty, grade received)
 - **GradeDistribution** — A/B/C/D/F/W counts per professor per course per semester
 - **SavedScheduleSection** — junction table linking SavedSchedule to Section
