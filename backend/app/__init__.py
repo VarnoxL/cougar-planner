@@ -1,6 +1,10 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+import os, json
+import firebase_admin
+from firebase_admin import credentials
+
 
 db = SQLAlchemy()
 
@@ -15,6 +19,11 @@ def create_app(config_overrides=None):
 
     db.init_app(app)
     CORS(app)
+    service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT_JSON')
+    service_account = json.loads(service_account)
+    cred = credentials.Certificate(service_account)
+    firebase_admin.initialize_app(cred)
+
 
     from .routes.courses import courses_bp
     from .routes.professors import professors_bp
