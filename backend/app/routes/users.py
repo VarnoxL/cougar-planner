@@ -55,6 +55,12 @@ def profile(id):
         "major": user.major,
         "created_at": user.created_at.isoformat() if user.created_at else None,
     }), 200
+
+@users_bp.route("/api/users/<int:id>", methods=["PATCH"])
+@require_auth
+def update_profile():
+
+
             
 
 
