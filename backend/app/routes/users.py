@@ -6,6 +6,7 @@ from ..utils.auth import require_auth
 from flask import Blueprint, jsonify, request, g
 from ..models import User
 from .. import db
+from sqlalchemy.exc import IntegrityError
 
 users_bp = Blueprint("users", __name__)
 
@@ -26,9 +27,15 @@ def register():
         }),200
     else:
         email = g.decoded_token.get("email")
+        if email is None:
+            return jsonify({"error": "email not found"}), 400
         user = User(firebase_uid=uid, email=email)
-        db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.add(user)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify({"error": "account already exists"}), 409
         return jsonify({
         "id": user.id,
         "firebase_uid": user.firebase_uid,
@@ -38,6 +45,24 @@ def register():
         "created_at": user.created_at.isoformat() if user.created_at else None,
 
         }),201
+
+@users_bp.route("/api/users/<int:id>", methods=["GET"])
+def profile(id):
+    user = User.query.get_or_404(id, description="profile not found")
+    return jsonify({
+        "id": user.id,
+        "display_name": user.display_name,
+        "major": user.major,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+    }), 200
+            
+
+
+
+
+
+
+
 
 
 
