@@ -19,7 +19,8 @@ A course planning tool for SIUE (Southern Illinois University Edwardsville) stud
 ## Tech Stack
 
 - **Backend:** Python, Flask, SQLAlchemy
-- **Database:** PostgreSQL
+- **Frontend:** React, Vite, Tailwind CSS
+- **Database:** PostgreSQL (production), SQLite (development)
 - **Auth:** Firebase Authentication
 - **Data Sources:** SIUE Banner course catalog, RateMyProfessors GraphQL API
 
@@ -29,41 +30,51 @@ A course planning tool for SIUE (Southern Illinois University Edwardsville) stud
 
 ```
 cougar-planner/
-└── backend/
-    ├── app/
-    │   ├── __init__.py             # Flask app factory
-    │   ├── config.py               # DB config via .env
-    │   ├── models.py               # SQLAlchemy models
-    │   ├── routes/
-    │   │   ├── courses.py          # /api/courses
-    │   │   ├── professors.py       # /api/professors
-    │   │   ├── schedules.py        # /api/schedules
-    │   │   ├── reviews.py          # /api/reviews
-    │   │   ├── users.py            # /api/users
-    │   │   └── grade_distributions.py  # /api/grade-distributions
-    │   └── utils/
-    │       ├── conflict.py         # Time conflict detection
-    │       └── auth.py             # Firebase token verification
-    ├── scrapers/
-    │   ├── rmp_scraper.py          # Scrapes RateMyProfessors (1,559 SIUE professors)
-    │   ├── siue_scraper.py         # Scrapes SIUE Banner 9 API (course catalog)
-    │   └── grade_scraper.py        # Reserved for future grade distribution data
-    ├── requirements.txt
-    └── run.py
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py             # Flask app factory + blueprint registration
+│   │   ├── config.py               # DB config via .env
+│   │   ├── models.py               # SQLAlchemy models
+│   │   ├── routes/
+│   │   │   ├── courses.py          # /api/courses
+│   │   │   ├── professors.py       # /api/professors
+│   │   │   ├── schedules.py        # /api/schedules
+│   │   │   ├── reviews.py          # /api/reviews
+│   │   │   ├── users.py            # /api/users
+│   │   │   └── grade_distributions.py  # /api/grade-distributions
+│   │   └── utils/
+│   │       ├── conflict.py         # Time conflict detection for schedule builder
+│   │       └── auth.py             # Firebase token verification middleware
+│   ├── scrapers/
+│   │   ├── rmp_scraper.py          # Scrapes RateMyProfessors (1,559 SIUE professors)
+│   │   ├── siue_scraper.py         # Scrapes SIUE Banner 9 API (course catalog)
+│   │   └── grade_scraper.py        # Planned — not yet active (data source TBD)
+│   ├── requirements.txt
+│   └── run.py
+└── frontend/
+    ├── src/
+    │   ├── App.jsx                 # Root React component
+    │   ├── main.jsx                # Entry point — mounts React app to DOM
+    │   └── index.css               # Global styles + Tailwind CSS import
+    ├── index.html                  # HTML shell
+    ├── vite.config.js              # Vite config with React and Tailwind plugins
+    └── package.json
 ```
 
 ---
 
 ## Setup
 
-### 1. Clone and install dependencies
+### Backend
+
+#### 1. Clone and install dependencies
 ```bash
 git clone https://github.com/VarnoxL/cougar-planner.git
 cd cougar-planner/backend
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment
+#### 2. Configure environment
 Create `backend/.env`:
 ```
 DATABASE_URL=postgresql://postgres:password@localhost/cougar_planner
@@ -71,12 +82,12 @@ SIUE_TERM=202540
 FIREBASE_SERVICE_ACCOUNT_JSON=<your service account JSON string>
 ```
 
-### 3. Set up the database
+#### 3. Set up the database
 ```bash
 python -c "from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()"
 ```
 
-### 4. Run the scrapers
+#### 4. Run the scrapers
 ```bash
 # Scrape professor data from RateMyProfessors
 python -m scrapers.rmp_scraper
@@ -85,10 +96,29 @@ python -m scrapers.rmp_scraper
 python -m scrapers.siue_scraper
 ```
 
-### 5. Start the server
+#### 5. Start the backend server
 ```bash
 python run.py
 ```
+
+The API will be available at `http://localhost:5000`.
+
+---
+
+### Frontend
+
+#### 1. Install dependencies
+```bash
+cd cougar-planner/frontend
+npm install
+```
+
+#### 2. Start the dev server
+```bash
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173` and proxies API calls to the Flask backend.
 
 ---
 
