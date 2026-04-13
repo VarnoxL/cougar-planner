@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 from ..models import Review, Professor, Course, User
+from ..utils.auth import require_auth
 from .. import db
 
 reviews_bp = Blueprint("reviews", __name__)
@@ -125,10 +126,13 @@ def create_review():
 # - Use get_or_404 to fetch the review
 # - Delete and commit
 # - Return { "message": "Review deleted" }
-@reviews_bp.route("/api/reviews/<int:review_id>", methods = ["DELETE"])
+@reviews_bp.route("/api/reviews/<int:review_id>", methods=["DELETE"])
+@require_auth
 def delete_review(review_id):
     review = Review.query.get_or_404(review_id)
+    if g.decoded_token.get("uid") != review.user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
     db.session.delete(review)
     db.session.commit()
-    return jsonify ({"message": "Review deleted"}), 200
+    return jsonify({"message": "Review deleted"}), 200
     
