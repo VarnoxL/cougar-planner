@@ -23,8 +23,8 @@ class Course(db.Model):
     __tablename__ = "courses"
 
     id = db.Column(db.Integer, primary_key=True)
-    subject = db.Column(db.String(20), nullable=False)
-    number = db.Column(db.String(20), nullable=False)
+    subject = db.Column(db.String(20), nullable=False, index=True)
+    number = db.Column(db.String(20), nullable=False, index=True)
     name = db.Column(db.String(255), nullable=False)
     credits = db.Column(db.Integer)
     description = db.Column(db.Text)
@@ -38,11 +38,11 @@ class Section(db.Model):
     __tablename__ = "sections"
 
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
-    professor_id = db.Column(db.Integer, db.ForeignKey("professors.id"), nullable=True)
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False, index=True)
+    professor_id = db.Column(db.Integer, db.ForeignKey("professors.id"), nullable=True, index=True)
     crn = db.Column(db.String(20), unique=True, nullable=False)
     section_num = db.Column(db.String(20))
-    semester = db.Column(db.String(20))
+    semester = db.Column(db.String(20), index=True)
     capacity = db.Column(db.Integer)
     enrolled = db.Column(db.Integer)
     delivery_method = db.Column(db.String(50))
@@ -57,7 +57,7 @@ class Schedule(db.Model):
     __tablename__ = "schedules"
 
     id = db.Column(db.Integer, primary_key=True)
-    section_id = db.Column(db.Integer, db.ForeignKey("sections.id"), nullable=False)
+    section_id = db.Column(db.Integer, db.ForeignKey("sections.id"), nullable=False, index=True)
     day = db.Column(db.String(20))
     start_time = db.Column(db.String(10))
     end_time = db.Column(db.String(10))
@@ -84,9 +84,9 @@ class SavedSchedule(db.Model):
     __tablename__ = "saved_schedules"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     name = db.Column(db.String(255))
-    semester = db.Column(db.String(20))
+    semester = db.Column(db.String(20), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", back_populates="saved_schedules")
@@ -97,8 +97,8 @@ class SavedScheduleSection(db.Model):
     __tablename__ = "saved_schedule_sections"
 
     id = db.Column(db.Integer, primary_key=True)
-    saved_schedule_id = db.Column(db.Integer, db.ForeignKey("saved_schedules.id"), nullable=False)
-    section_id = db.Column(db.Integer, db.ForeignKey("sections.id"), nullable=False)
+    saved_schedule_id = db.Column(db.Integer, db.ForeignKey("saved_schedules.id"), nullable=False, index=True)
+    section_id = db.Column(db.Integer, db.ForeignKey("sections.id"), nullable=False, index=True)
 
     saved_schedule = db.relationship("SavedSchedule", back_populates="saved_schedule_sections")
     section = db.relationship("Section", back_populates="saved_schedule_sections")
@@ -108,14 +108,14 @@ class Review(db.Model):
     __tablename__ = "reviews"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    professor_id = db.Column(db.Integer, db.ForeignKey("professors.id"), nullable=False)
-    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    professor_id = db.Column(db.Integer, db.ForeignKey("professors.id"), nullable=False, index=True)
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False, index=True)
     rating = db.Column(db.Integer)
     difficulty = db.Column(db.Integer)
     grade_received = db.Column(db.String(5))
     comment = db.Column(db.Text)
-    semester_taken = db.Column(db.String(20))
+    semester_taken = db.Column(db.String(20), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", back_populates="reviews")
@@ -127,9 +127,9 @@ class GradeDistribution(db.Model):
     __tablename__ = "grade_distributions"
 
     id = db.Column(db.Integer, primary_key=True)
-    professor_id = db.Column(db.Integer, db.ForeignKey("professors.id"), nullable=False)
-    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
-    semester = db.Column(db.String(20))
+    professor_id = db.Column(db.Integer, db.ForeignKey("professors.id"), nullable=False, index=True)
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False, index=True)
+    semester = db.Column(db.String(20), index=True)
     total_students = db.Column(db.Integer)
     a_count = db.Column(db.Integer)
     b_count = db.Column(db.Integer)
