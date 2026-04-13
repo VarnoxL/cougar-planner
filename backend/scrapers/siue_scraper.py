@@ -19,7 +19,36 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; cougar-planner/1.0; +https://cougar-planner.com)"
 }
 
-TERM = os.getenv("SIUE_TERM")
+def fetch_latest_term():
+    """
+    Fetch available terms from Banner and return the most recent one.
+    Falls back to SIUE_TERM in .env if the request fails.
+    """
+    fallback = os.getenv("SIUE_TERM")
+    try:
+        response = requests.get(
+            f"{BASE_URL}/classSearch/getTerms",
+            params={"searchTerm": "", "offset": 1, "max": 10},
+            headers=HEADERS,
+            timeout=15,
+        )
+        response.raise_for_status()
+        terms = response.json()
+        if terms:
+            latest = terms[0]["code"]
+            print(f"Auto-detected term: {terms[0]['description']} ({latest})")
+            return latest
+    except Exception as e:
+        print(f"Could not fetch terms from Banner: {e}", file=sys.stderr)
+
+    if fallback:
+        print(f"Falling back to SIUE_TERM from .env: {fallback}")
+        return fallback
+
+    raise RuntimeError("No term available — set SIUE_TERM in .env or check Banner connectivity.")
+
+
+TERM = fetch_latest_term()
 
 
 def create_session():
