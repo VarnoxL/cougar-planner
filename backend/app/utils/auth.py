@@ -9,11 +9,14 @@ def require_auth(f):
         if not auth_header:
             return jsonify({"error": "Authorization failed"}), 401
 
-        token = auth_header.split()[1]
+        parts = auth_header.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            return jsonify({"error": "Authorization failed"}), 401
+        token = parts[1]
         try:
             g.decoded_token = firebase_admin.auth.verify_id_token(token)
-            return f(*args, **kwargs)     
-        except:
+            return f(*args, **kwargs)
+        except firebase_admin.auth.FirebaseError:
             return jsonify({"error": "Authorization failed"}), 401
     
 
