@@ -16,19 +16,30 @@ def list_professors():
     if min_rating is not None:
         query = query.filter(Professor.rating >= min_rating)
 
-    professors = query.all()
-    return jsonify([
-        {
-            "id": p.id,
-            "name": p.name,
-            "department": p.department,
-            "rating": p.rating,
-            "difficulty": p.difficulty,
-            "num_ratings": p.num_ratings,
-            "would_take_again": p.would_take_again,
-        }
-        for p in professors
-    ])
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    per_page = min(per_page, 100)
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "results": [
+            {
+                "id": p.id,
+                "name": p.name,
+                "department": p.department,
+                "rating": p.rating,
+                "difficulty": p.difficulty,
+                "num_ratings": p.num_ratings,
+                "would_take_again": p.would_take_again,
+            }
+            for p in pagination.items
+        ],
+    })
 
 
 @professors_bp.route("/api/professors/<int:professor_id>", methods=["GET"])

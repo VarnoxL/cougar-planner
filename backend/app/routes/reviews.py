@@ -22,29 +22,40 @@ def list_reviews():
         query = query.filter_by(professor_id=professor_id)
     if course_id:
         query = query.filter_by(course_id=course_id)
-    reviews = query.all()
-    return jsonify([
-        {
-            "id": r.id,
-            "course": {
-                "id": r.course.id,
-                "subject": r.course.subject,
-                "number": r.course.number,
-                "name": r.course.name,
-            },
-            "user": {
-                "id": r.user.id,
-                "display_name": r.user.display_name,
-            },
-            "rating": r.rating,
-            "difficulty": r.difficulty,
-            "grade_received": r.grade_received,
-            "comment": r.comment,
-            "semester_taken": r.semester_taken,
-            "created_at":r.created_at.isoformat() if r.created_at else None,
-        }
-        for r in reviews
-    ])
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    per_page = min(per_page, 100)
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "results": [
+            {
+                "id": r.id,
+                "course": {
+                    "id": r.course.id,
+                    "subject": r.course.subject,
+                    "number": r.course.number,
+                    "name": r.course.name,
+                },
+                "user": {
+                    "id": r.user.id,
+                    "display_name": r.user.display_name,
+                },
+                "rating": r.rating,
+                "difficulty": r.difficulty,
+                "grade_received": r.grade_received,
+                "comment": r.comment,
+                "semester_taken": r.semester_taken,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in pagination.items
+        ],
+    })
 
     
 

@@ -19,18 +19,29 @@ def list_courses():
             Course.name.ilike(pattern) | Course.number.ilike(pattern)
         )
 
-    courses = query.all()
-    return jsonify([
-        {
-            "id": c.id,
-            "subject": c.subject,
-            "number": c.number,
-            "name": c.name,
-            "credits": c.credits,
-            "description": c.description,
-        }
-        for c in courses
-    ])
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    per_page = min(per_page, 100)
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "results": [
+            {
+                "id": c.id,
+                "subject": c.subject,
+                "number": c.number,
+                "name": c.name,
+                "credits": c.credits,
+                "description": c.description,
+            }
+            for c in pagination.items
+        ],
+    })
 
 
 @courses_bp.route("/api/courses/<int:course_id>", methods=["GET"])

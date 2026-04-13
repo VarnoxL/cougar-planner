@@ -17,17 +17,29 @@ def list_schedules():
     if not user_id:
         return jsonify({"error" : "user_id is required"}), 400
 
-    schedules = SavedSchedule.query.filter_by(user_id=user_id).all()
-    return jsonify([
-        {
-            "id": s.id,
-            "name": s.name,
-            "semester": s.semester,
-            "created_at": s.created_at.isoformat() if s.created_at else None,
-            "section_count": len(s.saved_schedule_sections),
-        }
-        for s in schedules
-    ])
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+    per_page = min(per_page, 100)
+
+    query = SavedSchedule.query.filter_by(user_id=user_id)
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "total": pagination.total,
+        "pages": pagination.pages,
+        "results": [
+            {
+                "id": s.id,
+                "name": s.name,
+                "semester": s.semester,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "section_count": len(s.saved_schedule_sections),
+            }
+            for s in pagination.items
+        ],
+    })
 
 
 # POST /api/schedules
