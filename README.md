@@ -78,7 +78,7 @@ pip install -r requirements.txt
 Create `backend/.env`:
 ```
 DATABASE_URL=postgresql://postgres:password@localhost/cougar_planner
-SIUE_TERM=202540
+SIUE_TERM=202635
 FIREBASE_SERVICE_ACCOUNT_JSON=<your service account JSON string>
 ```
 
