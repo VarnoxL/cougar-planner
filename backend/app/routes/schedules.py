@@ -17,6 +17,7 @@ def list_schedules():
     user_id = request.args.get("user_id")
     if not user_id:
         return jsonify({"error" : "user_id is required"}), 400
+    User.query.get_or_404(user_id)
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)

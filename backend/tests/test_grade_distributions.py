@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from app import create_app, db
 from app.models import Professor, Course, User, Review
 
@@ -57,6 +58,17 @@ def make_review(user, professor, course, grade=None, semester="202510"):
     return r
 
 
+def auth_headers(uid="uid1"):
+    return {"Authorization": f"Bearer fake-token-{uid}"}
+
+
+def mock_verify(uid):
+    return patch(
+        "firebase_admin.auth.verify_id_token",
+        return_value={"uid": uid},
+    )
+
+
 # --- create_review validation ---
 
 def test_create_review_invalid_grade_returns_400(app, client):
@@ -67,12 +79,13 @@ def test_create_review_invalid_grade_returns_400(app, client):
         db.session.commit()
         user_id, prof_id, course_id = u.id, p.id, c.id
 
-    resp = client.post("/api/reviews", json={
-        "user_id": user_id,
-        "professor_id": prof_id,
-        "course_id": course_id,
-        "grade_received": "Z",
-    })
+    with mock_verify("uid1"):
+        resp = client.post("/api/reviews", json={
+            "user_id": user_id,
+            "professor_id": prof_id,
+            "course_id": course_id,
+            "grade_received": "Z",
+        }, headers=auth_headers("uid1"))
     assert resp.status_code == 400
     assert "grade_received" in resp.get_json()["error"]
 
@@ -85,12 +98,13 @@ def test_create_review_normalizes_lowercase_grade(app, client):
         db.session.commit()
         user_id, prof_id, course_id = u.id, p.id, c.id
 
-    resp = client.post("/api/reviews", json={
-        "user_id": user_id,
-        "professor_id": prof_id,
-        "course_id": course_id,
-        "grade_received": "b+",
-    })
+    with mock_verify("uid1"):
+        resp = client.post("/api/reviews", json={
+            "user_id": user_id,
+            "professor_id": prof_id,
+            "course_id": course_id,
+            "grade_received": "b+",
+        }, headers=auth_headers("uid1"))
     assert resp.status_code == 201
     assert resp.get_json()["grade_received"] == "B+"
 
@@ -103,11 +117,12 @@ def test_create_review_no_grade_is_accepted(app, client):
         db.session.commit()
         user_id, prof_id, course_id = u.id, p.id, c.id
 
-    resp = client.post("/api/reviews", json={
-        "user_id": user_id,
-        "professor_id": prof_id,
-        "course_id": course_id,
-    })
+    with mock_verify("uid1"):
+        resp = client.post("/api/reviews", json={
+            "user_id": user_id,
+            "professor_id": prof_id,
+            "course_id": course_id,
+        }, headers=auth_headers("uid1"))
     assert resp.status_code == 201
     assert resp.get_json()["grade_received"] is None
 
@@ -125,12 +140,13 @@ def test_create_review_all_valid_grades_accepted(app, client):
             u = make_user(uid=f"uid{i}", email=f"user{i}@siue.edu")
             db.session.commit()
             user_id = u.id
-        resp = client.post("/api/reviews", json={
-            "user_id": user_id,
-            "professor_id": prof_id,
-            "course_id": course_id,
-            "grade_received": grade,
-        })
+        with mock_verify(f"uid{i}"):
+            resp = client.post("/api/reviews", json={
+                "user_id": user_id,
+                "professor_id": prof_id,
+                "course_id": course_id,
+                "grade_received": grade,
+            }, headers=auth_headers(f"uid{i}"))
         assert resp.status_code == 201, f"Failed for grade {grade}"
 
 

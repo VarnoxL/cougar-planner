@@ -10,6 +10,11 @@ def get_conflicts(saved_schedule_id: int, new_section_id: int) -> list:
     if not new_schedules:
         return []
 
+    section_ids = [s.section_id for s in saved_schedule_sections]
+    sections_by_id = {
+        s.id: s for s in Section.query.filter(Section.id.in_(section_ids)).all()
+    }
+
     conflicts = []
 
     for saved_schedule_section in saved_schedule_sections:
@@ -27,7 +32,7 @@ def get_conflicts(saved_schedule_id: int, new_section_id: int) -> list:
                     continue
 
                 if new_sched.start_time < saved_schedule.end_time and saved_schedule.start_time < new_sched.end_time:
-                    section = Section.query.get(saved_schedule_section.section_id)
+                    section = sections_by_id.get(saved_schedule_section.section_id)
                     conflicts.append({
                         "conflicting_section_id": saved_schedule_section.section_id,
                         "conflicting_crn": section.crn if section else None,
