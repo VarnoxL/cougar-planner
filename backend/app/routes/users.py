@@ -58,7 +58,29 @@ def profile(id):
 
 @users_bp.route("/api/users/<int:id>", methods=["PATCH"])
 @require_auth
-def update_profile():
+def update_profile(id):
+    uid = g.decoded_token.get("uid")
+    user = User.query.get_or_404(id)
+    if uid!= user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "no body"}), 400
+    if "display_name" in data:
+        user.display_name = data.get("display_name")
+    if "major" in data:
+        user.major = data.get("major")
+    db.session.commit()
+    return jsonify({
+        "id": user.id,
+        "display_name": user.display_name,
+        "major": user.major,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+    }), 200
+
+
+
+
 
 
             
