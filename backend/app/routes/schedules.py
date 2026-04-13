@@ -202,6 +202,7 @@ def delete_schedule(schedule_id):
 #     If conflicts exist, return 409 with { "error": "Time conflict", "conflicts": [...] }
 # - Otherwise, create the SavedScheduleSection and return 201
 @schedules_bp.route("/api/schedules/<int:schedule_id>/sections", methods=["POST"])
+@require_auth
 def add_section(schedule_id):
     data = request.get_json()
     if not data:
@@ -209,7 +210,9 @@ def add_section(schedule_id):
     section_id = data.get("section_id")
     if not section_id:
         return jsonify({"error": "value is none"}), 400
-    SavedSchedule.query.get_or_404(schedule_id)
+    schedule = SavedSchedule.query.get_or_404(schedule_id)
+    if g.decoded_token.get("uid") != schedule.user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
     Section.query.get_or_404(section_id)
     duplicate = SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id, section_id=section_id).first()
     if duplicate:
@@ -233,7 +236,11 @@ def add_section(schedule_id):
 # - If not found, return 404 with { "error": "Section not in schedule" }
 # - Delete and commit, return { "message": "Section removed" }
 @schedules_bp.route("/api/schedules/<int:schedule_id>/sections/<int:section_id>", methods=["DELETE"])
+@require_auth
 def remove_section(schedule_id, section_id):
+    schedule = SavedSchedule.query.get_or_404(schedule_id)
+    if g.decoded_token.get("uid") != schedule.user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
     section = SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id, section_id=section_id).first()
     if not section:
         return jsonify({"error": "Section not in schedule"}), 404

@@ -74,6 +74,7 @@ def list_reviews():
 # - Verify user, professor, and course all exist (404 if any missing)
 # - Create and commit the Review, return 201
 @reviews_bp.route("/api/reviews", methods=["POST"])
+@require_auth
 def create_review():
     data = request.get_json()
     if not data:
@@ -83,7 +84,9 @@ def create_review():
     course_id = data.get("course_id")
     if user_id is None or professor_id is None or course_id is None:
         return jsonify({"error": "user_id, professor_id, and course_id not found"}), 400
-    User.query.get_or_404(user_id)
+    user = User.query.get_or_404(user_id)
+    if g.decoded_token.get("uid") != user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
     Professor.query.get_or_404(professor_id)
     Course.query.get_or_404(course_id)
     rating = data.get("rating")

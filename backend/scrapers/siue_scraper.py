@@ -106,6 +106,8 @@ def parse_section(section):
         "crn": section["courseReferenceNumber"],
         "subject": section["subject"],
         "course_number": section["courseNumber"],
+        "section_num": section.get("sequenceNumber"),
+        "delivery_method": section.get("instructionalMethod"),
         "title": section["courseTitle"],
         "credits": section["creditHours"],
         "capacity": section["maximumEnrollment"],
@@ -132,8 +134,14 @@ def upsert_sections(sections):
                     db.session.add(course)
                     db.session.flush()
 
-                # Find or create Professor
+                # Find professor — prefer matching by name against existing
+                # RMP-sourced records. Fall back to creating a new row only if
+                # no match exists at all, so we avoid duplicates when both
+                # scrapers run.
                 prof = Professor.query.filter_by(name=data["professor"]).first()
+                if not prof:
+                    # Try a looser match: "First Last" vs DB might have spacing diffs
+                    prof = Professor.query.filter(Professor.name.ilike(data["professor"])).first()
                 if not prof:
                     prof = Professor(name=data["professor"])
                     db.session.add(prof)
@@ -145,6 +153,8 @@ def upsert_sections(sections):
                     existing.capacity = data["capacity"]
                     existing.enrolled = data["enrolled"]
                     existing.professor_id = prof.id
+                    existing.section_num = data["section_num"]
+                    existing.delivery_method = data["delivery_method"]
                     updated += 1
                 else:
                     existing = Section(
@@ -152,6 +162,8 @@ def upsert_sections(sections):
                         course_id=course.id,
                         professor_id=prof.id,
                         semester=TERM,
+                        section_num=data["section_num"],
+                        delivery_method=data["delivery_method"],
                         capacity=data["capacity"],
                         enrolled=data["enrolled"],
                     )
