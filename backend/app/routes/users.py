@@ -67,9 +67,15 @@ def update_profile(id):
     if not data:
         return jsonify({"error": "no body"}), 400
     if "display_name" in data:
-        user.display_name = data.get("display_name")
+        display_name = data.get("display_name")
+        if not isinstance(display_name, str) or not display_name.strip() or len(display_name) > 255:
+            return jsonify({"error": "display_name must be a non-empty string under 255 characters"}), 400
+        user.display_name = display_name.strip()
     if "major" in data:
-        user.major = data.get("major")
+        major = data.get("major")
+        if not isinstance(major, str) or not major.strip() or len(major) > 255:
+            return jsonify({"error": "major must be a non-empty string under 255 characters"}), 400
+        user.major = major.strip()
     db.session.commit()
     return jsonify({
         "id": user.id,
