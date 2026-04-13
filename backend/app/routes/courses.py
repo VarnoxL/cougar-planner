@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from sqlalchemy.orm import joinedload
 from ..models import Course, Section, Professor, Schedule
 
 courses_bp = Blueprint("courses", __name__)
@@ -46,7 +47,12 @@ def list_courses():
 
 @courses_bp.route("/api/courses/<int:course_id>", methods=["GET"])
 def get_course(course_id):
-    course = Course.query.get_or_404(course_id)
+    course = Course.query.options(
+        joinedload(Course.sections)
+        .joinedload(Section.professor),
+        joinedload(Course.sections)
+        .joinedload(Section.schedules),
+    ).get_or_404(course_id)
 
     sections = []
     for s in course.sections:

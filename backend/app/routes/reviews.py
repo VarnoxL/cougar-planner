@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request, g
+from sqlalchemy.orm import joinedload
 from ..models import Review, Professor, Course, User
 from ..utils.auth import require_auth
 from .. import db
@@ -17,7 +18,10 @@ def list_reviews():
     course_id = request.args.get("course_id")
     if not professor_id and not course_id:
         return jsonify({"error": "professor_id and course_id not found"}), 400
-    query = Review.query
+    query = Review.query.options(
+        joinedload(Review.course),
+        joinedload(Review.user),
+    )
     if professor_id:
         query = query.filter_by(professor_id=professor_id)
     if course_id:

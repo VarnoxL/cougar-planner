@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request, g
+from sqlalchemy.orm import joinedload
 from ..models import SavedSchedule, SavedScheduleSection, Section, User
 from ..utils.conflict import get_conflicts
 from ..utils.auth import require_auth
@@ -82,7 +83,17 @@ def create_schedule():
 # - See courses.py lines 42-49 for how to handle a nullable professor
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["GET"])
 def get_schedule(schedule_id):
-    current_schedule = SavedSchedule.query.get_or_404(schedule_id)
+    current_schedule = SavedSchedule.query.options(
+        joinedload(SavedSchedule.saved_schedule_sections)
+        .joinedload(SavedScheduleSection.section)
+        .joinedload(Section.professor),
+        joinedload(SavedSchedule.saved_schedule_sections)
+        .joinedload(SavedScheduleSection.section)
+        .joinedload(Section.course),
+        joinedload(SavedSchedule.saved_schedule_sections)
+        .joinedload(SavedScheduleSection.section)
+        .joinedload(Section.schedules),
+    ).get_or_404(schedule_id)
     section_list = []
     for saved_schedule_section in current_schedule.saved_schedule_sections:
         section = saved_schedule_section.section

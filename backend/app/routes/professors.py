@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from sqlalchemy.orm import joinedload
 from ..models import Professor, Section, Course, Review
 
 professors_bp = Blueprint("professors", __name__)
@@ -44,7 +45,10 @@ def list_professors():
 
 @professors_bp.route("/api/professors/<int:professor_id>", methods=["GET"])
 def get_professor(professor_id):
-    professor = Professor.query.get_or_404(professor_id)
+    professor = Professor.query.options(
+        joinedload(Professor.sections),
+        joinedload(Professor.reviews).joinedload(Review.course),
+    ).get_or_404(professor_id)
 
     # Distinct courses this professor has taught via sections
     course_ids = {s.course_id for s in professor.sections}
