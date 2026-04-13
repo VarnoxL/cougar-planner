@@ -20,9 +20,9 @@ def create_app(config_overrides=None):
     db.init_app(app)
     CORS(app)
     service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT_JSON')
-    service_account = json.loads(service_account)
-    cred = credentials.Certificate(service_account)
-    firebase_admin.initialize_app(cred)
+    if service_account:
+        cred = credentials.Certificate(json.loads(service_account))
+        firebase_admin.initialize_app(cred)
 
 
     from .routes.courses import courses_bp
