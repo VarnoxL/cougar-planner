@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 from ..models import SavedSchedule, SavedScheduleSection, Section, User
 from ..utils.conflict import get_conflicts
+from ..utils.auth import require_auth
 from .. import db
 
 schedules_bp = Blueprint("schedules", __name__)
@@ -35,6 +36,7 @@ def list_schedules():
 # - Create and commit a SavedSchedule
 # - Return the new schedule object with 201
 @schedules_bp.route("/api/schedules", methods=["POST"])
+@require_auth
 def create_schedule():
     data = request.get_json()
     if not data:
@@ -44,7 +46,9 @@ def create_schedule():
     semester = data.get("semester")
     if not user_id or not name or not semester:
         return jsonify({"error": "user_id, name, and semester are required"}), 400
-    User.query.get_or_404(user_id)
+    user = User.query.get_or_404(user_id)
+    if g.decoded_token.get("uid") != user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
 
     schedule = SavedSchedule(user_id=user_id, name=name, semester=semester)
     db.session.add(schedule)
@@ -124,8 +128,11 @@ def get_schedule(schedule_id):
 # - Only update fields that are present in the request body
 # - Return the updated schedule object
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["PATCH"])
+@require_auth
 def update_schedule(schedule_id):
     new_schedule = SavedSchedule.query.get_or_404(schedule_id)
+    if g.decoded_token.get("uid") != new_schedule.user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
     data = request.get_json()
     if not data:
         return jsonify({"error": "empty or not JSON"}), 400
@@ -150,8 +157,11 @@ def update_schedule(schedule_id):
 # - Then delete the schedule and commit
 # - Return { "message": "Schedule deleted" }
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["DELETE"])
+@require_auth
 def delete_schedule(schedule_id):
     schedule = SavedSchedule.query.get_or_404(schedule_id)
+    if g.decoded_token.get("uid") != schedule.user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
     SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id).delete()
     db.session.delete(schedule)
     db.session.commit()
