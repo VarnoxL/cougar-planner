@@ -48,16 +48,65 @@ cougar-planner/
 │   ├── scrapers/
 │   │   ├── rmp_scraper.py          # Scrapes RateMyProfessors (1,559 SIUE professors)
 │   │   ├── siue_scraper.py         # Scrapes SIUE Banner 9 API (course catalog)
-│   │   └── grade_scraper.py        # Planned — not yet active (data source TBD)
+│   │   └── grade_scraper.py        # Scrapes IBHE grade distribution CSVs
 │   ├── requirements.txt
 │   └── run.py
 └── frontend/
     ├── src/
-    │   ├── App.jsx                 # Root React component
+    │   ├── api/                    # Axios wrappers for each backend resource
+    │   │   ├── client.js           # Base Axios instance with proxy config
+    │   │   ├── courses.js
+    │   │   ├── professors.js
+    │   │   ├── schedules.js
+    │   │   ├── reviews.js
+    │   │   ├── gradeDistributions.js
+    │   │   └── users.js
+    │   ├── components/             # Shared UI components
+    │   │   ├── ConflictModal.jsx
+    │   │   ├── CourseCard.jsx
+    │   │   ├── DayPills.jsx
+    │   │   ├── EmptyState.jsx
+    │   │   ├── GradeDistChart.jsx
+    │   │   ├── LoadingSpinner.jsx
+    │   │   ├── Navbar.jsx
+    │   │   ├── Pagination.jsx
+    │   │   ├── ProfessorBadge.jsx
+    │   │   ├── ProtectedRoute.jsx
+    │   │   ├── RatingBadge.jsx
+    │   │   ├── ReviewCard.jsx
+    │   │   ├── ReviewForm.jsx
+    │   │   ├── SearchInput.jsx
+    │   │   ├── SeatsBadge.jsx
+    │   │   ├── SectionRow.jsx
+    │   │   ├── TimeDisplay.jsx
+    │   │   └── WeeklyCalendar.jsx
+    │   ├── contexts/
+    │   │   └── AuthContext.jsx     # Firebase auth state (current user, loading)
+    │   ├── hooks/
+    │   │   ├── useDebounce.js
+    │   │   └── usePagination.js
+    │   ├── pages/
+    │   │   ├── LandingPage.jsx
+    │   │   ├── LoginPage.jsx
+    │   │   ├── RegisterPage.jsx
+    │   │   ├── CoursesPage.jsx
+    │   │   ├── CourseDetailPage.jsx
+    │   │   ├── ProfessorsPage.jsx
+    │   │   ├── ProfessorDetailPage.jsx
+    │   │   ├── ScheduleBuilderPage.jsx
+    │   │   ├── MySchedulesPage.jsx
+    │   │   └── ProfilePage.jsx
+    │   ├── utils/
+    │   │   ├── constants.js
+    │   │   ├── formatDay.js
+    │   │   ├── formatTime.js
+    │   │   ├── ratingColor.js
+    │   │   └── seatsColor.js
+    │   ├── App.jsx                 # Root component with React Router routes
     │   ├── main.jsx                # Entry point — mounts React app to DOM
     │   └── index.css               # Global styles + Tailwind CSS import
-    ├── index.html                  # HTML shell
-    ├── vite.config.js              # Vite config with React and Tailwind plugins
+    ├── index.html
+    ├── vite.config.js
     └── package.json
 ```
 
