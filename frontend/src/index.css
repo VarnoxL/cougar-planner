@@ -2,4 +2,21 @@
 
 @theme {
   --color-c-red: #c8102e;
+  --color-bg-primary: #0f1117;
+  --color-bg-card: #1a1d27;
+  --color-bg-input: #252836;
+  --color-border: #2e3244;
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #9ca3af;
+  --color-rating-green: #22c55e;
+  --color-rating-yellow: #eab308;
+  --color-rating-red: #ef4444;
+  --color-seats-green: #22c55e;
+  --color-seats-yellow: #eab308;
+  --color-seats-red: #ef4444;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
