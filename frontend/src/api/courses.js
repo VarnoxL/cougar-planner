@@ -8,5 +8,6 @@ export function fetchCourses(params = {}) {
 }
 
 export function fetchCourse(id) {
+  if (id == null) throw new Error('fetchCourse requires an id')
   return apiFetch(`/api/courses/${id}`)
 }
