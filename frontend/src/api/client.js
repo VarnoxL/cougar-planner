@@ -5,8 +5,11 @@ async function apiFetch(url, options = {}) {
   const user = auth.currentUser
   const token = user ? await user.getIdToken() : null
 
+  const method = (options.method ?? 'GET').toUpperCase()
+  const hasBody = !['GET', 'HEAD'].includes(method)
+
   const headers = {
-    'Content-Type': 'application/json',
+    ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   }
@@ -19,6 +22,15 @@ async function apiFetch(url, options = {}) {
     err.status = res.status
     err.body = body
     throw err
+  }
+
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return null
+  }
+
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    throw new Error(`Unexpected content-type: ${contentType}`)
   }
 
   return res.json()
