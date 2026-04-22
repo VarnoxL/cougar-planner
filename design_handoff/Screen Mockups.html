@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CougarPlanner — Screen Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --red:#c8102e; --red-h:#a50e26; --red-l:rgba(200,16,46,0.12);
+  --bg:#0f1117; --card:#1a1d27; --input:#252836; --hover:#2e3244;
+  --border:#2e3244; --t1:#e8eaed; --t2:#9ca3af; --t3:#6b7280;
+  --green:#22c55e; --yellow:#eab308; --err:#ef4444;
+  --sans:'DM Sans',system-ui,sans-serif; --mono:'Space Mono',monospace;
+  --r:6px;
+}
+body { background:#111318; font-family:var(--sans); color:var(--t1); }
+button { font-family:var(--sans); cursor:pointer; border:none; outline:none; }
+input,select,textarea { font-family:var(--sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+/* ── Shared atoms ───────────────────────────────────────── */
+const RatingBadge = ({ v }) => {
+  if (v == null) return <span style={{fontSize:11,color:'var(--t3)'}}>—</span>;
+  const [bg,col] = v>=4?['rgba(34,197,94,.13)','#22c55e']:v>=3?['rgba(234,179,8,.13)','#eab308']:['rgba(239,68,68,.13)','#ef4444'];
+  return <span style={{fontFamily:'var(--mono)',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:4,background:bg,color:col}}>{v.toFixed(1)}</span>;
+};
+const Tag = ({ children, red }) => (
+  <span style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',
+    color:red?'var(--red)':'var(--t3)',border:`1px solid ${red?'rgba(200,16,46,.3)':'var(--border)'}`,
+    padding:'2px 8px',borderRadius:2}}>{children}</span>
+);
+const Avatar = ({ name, size=36 }) => (
+  <div style={{width:size,height:size,borderRadius:'50%',background:'var(--input)',border:'1px solid var(--border)',
+    display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--mono)',
+    fontSize:size*.35,fontWeight:700,color:'var(--red)',flexShrink:0}}>
+    {name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+  </div>
+);
+const Field = ({ label, type='text', placeholder, value, note }) => (
+  <div style={{marginBottom:16}}>
+    <label style={{display:'block',fontSize:13,fontWeight:500,color:'var(--t2)',marginBottom:5}}>{label}</label>
+    <input type={type} defaultValue={value} placeholder={placeholder}
+      style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,
+        padding:'10px 14px',fontSize:14,color:'var(--t1)',outline:'none'}}/>
+    {note && <div style={{fontSize:11,color:'var(--t3)',marginTop:4}}>{note}</div>}
+  </div>
+);
+const Divider = () => <div style={{height:1,background:'var(--border)',margin:'4px 0'}}/>;
+const Navbar = ({ mobile }) => (
+  <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',
+    height:mobile?52:56,display:'flex',alignItems:'center',
+    padding:mobile?'0 16px':'0 24px',flexShrink:0,gap:mobile?0:28}}>
+    <span style={{fontFamily:'var(--mono)',fontSize:mobile?14:16,fontWeight:700,color:'var(--t1)',marginRight:'auto'}}>
+      Cougar<span style={{color:'var(--red)'}}>Planner</span>
+    </span>
+    {!mobile && ['Courses','Professors','Schedule','My Schedules'].map(l=>(
+      <span key={l} style={{fontSize:14,fontWeight:500,color:l==='Professors'?'var(--t1)':'var(--t2)',
+        padding:'5px 10px',borderRadius:4,background:l==='Professors'?'var(--card)':'transparent',cursor:'pointer'}}>{l}</span>
+    ))}
+    {mobile
+      ? <svg width="20" height="20" fill="none" stroke="var(--t2)" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      : <div style={{display:'flex',gap:8,marginLeft:12}}>
+          <span style={{fontSize:13,fontWeight:600,padding:'6px 14px',borderRadius:6,border:'1px solid var(--border)',color:'var(--t2)'}}>Sign In</span>
+          <span style={{fontSize:13,fontWeight:600,padding:'6px 14px',borderRadius:6,background:'var(--red)',color:'#fff'}}>Get Started</span>
+        </div>
+    }
+  </div>
+);
+
+/* ────────────────────────────────────────────────────────── */
+/* 1. LOGIN / REGISTER — Desktop                             */
+/* ────────────────────────────────────────────────────────── */
+const LoginDesktop = () => {
+  const [tab, setTab] = useState('login');
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column'}}>
+      <Navbar/>
+      <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:32}}>
+        <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,
+          width:420,padding:36,boxShadow:'0 8px 32px rgba(0,0,0,.55)'}}>
+          {/* Tab switcher */}
+          <div style={{display:'flex',background:'var(--input)',borderRadius:8,padding:3,marginBottom:28,gap:3}}>
+            {['login','register'].map(t=>(
+              <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'7px 0',borderRadius:6,
+                background:tab===t?'var(--card)':'transparent',
+                color:tab===t?'var(--t1)':'var(--t3)',
+                fontSize:13,fontWeight:600,border:tab===t?'1px solid var(--border)':'1px solid transparent',
+                transition:'all .15s'}}>
+                {t==='login'?'Sign In':'Create Account'}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'login' ? <>
+            <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700,marginBottom:4}}>
+              Welcome back
+            </div>
+            <div style={{fontSize:13,color:'var(--t3)',marginBottom:24}}>Sign in with your SIUE email</div>
+            <Field label="SIUE Email" type="email" placeholder="ajohnson@siue.edu"/>
+            <Field label="Password" type="password" placeholder="••••••••"/>
+            <div style={{display:'flex',justifyContent:'flex-end',marginBottom:20,marginTop:-8}}>
+              <span style={{fontSize:12,color:'var(--red)',cursor:'pointer'}}>Forgot password?</span>
+            </div>
+            <button style={{width:'100%',background:'var(--red)',color:'#fff',fontWeight:700,fontSize:14,
+              padding:'11px 0',borderRadius:6,border:'none',cursor:'pointer',letterSpacing:.02}}>
+              Sign In
+            </button>
+            <div style={{textAlign:'center',marginTop:18,fontSize:13,color:'var(--t3)'}}>
+              New to CougarPlanner? <span onClick={()=>setTab('register')} style={{color:'var(--red)',cursor:'pointer'}}>Create account</span>
+            </div>
+          </> : <>
+            <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700,marginBottom:4}}>
+              Get started
+            </div>
+            <div style={{fontSize:13,color:'var(--t3)',marginBottom:24}}>SIUE students only</div>
+            <Field label="Display Name" placeholder="Alex Johnson"/>
+            <Field label="SIUE Email" type="email" placeholder="ajohnson@siue.edu" note="Must be a valid @siue.edu address"/>
+            <Field label="Password" type="password" placeholder="Create a password"/>
+            <div style={{marginBottom:20}}>
+              <label style={{display:'block',fontSize:13,fontWeight:500,color:'var(--t2)',marginBottom:5}}>Major <span style={{color:'var(--t3)'}}>— optional</span></label>
+              <select style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'10px 14px',fontSize:14,color:'var(--t3)',outline:'none'}}>
+                <option value="">Select your major</option>
+                <option>Computer Science</option><option>Mathematics</option><option>Engineering</option><option>Physics</option><option>Other</option>
+              </select>
+            </div>
+            <button style={{width:'100%',background:'var(--red)',color:'#fff',fontWeight:700,fontSize:14,
+              padding:'11px 0',borderRadius:6,border:'none',cursor:'pointer'}}>
+              Create Account
+            </button>
+            <div style={{textAlign:'center',marginTop:18,fontSize:13,color:'var(--t3)'}}>
+              Already have an account? <span onClick={()=>setTab('login')} style={{color:'var(--red)',cursor:'pointer'}}>Sign in</span>
+            </div>
+          </>}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── LOGIN — Mobile ────────────────────────────────────── */
+const LoginMobile = () => {
+  const [tab, setTab] = useState('login');
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar mobile/>
+      <div style={{flex:1,overflowY:'auto',padding:20,display:'flex',flexDirection:'column',justifyContent:'center'}}>
+        <div style={{fontFamily:'var(--mono)',fontSize:22,fontWeight:700,textAlign:'center',marginBottom:6}}>
+          Cougar<span style={{color:'var(--red)'}}>Planner</span>
+        </div>
+        <div style={{fontSize:13,color:'var(--t3)',textAlign:'center',marginBottom:24}}>SIUE course planning</div>
+        <div style={{display:'flex',background:'var(--input)',borderRadius:8,padding:3,marginBottom:24,gap:3}}>
+          {['login','register'].map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'8px 0',borderRadius:6,
+              background:tab===t?'var(--card)':'transparent',color:tab===t?'var(--t1)':'var(--t3)',
+              fontSize:13,fontWeight:600,border:tab===t?'1px solid var(--border)':'1px solid transparent'}}>
+              {t==='login'?'Sign In':'Sign Up'}
+            </button>
+          ))}
+        </div>
+        {tab==='login' ? <>
+          <Field label="SIUE Email" type="email" placeholder="ajohnson@siue.edu"/>
+          <Field label="Password" type="password" placeholder="••••••••"/>
+          <button style={{width:'100%',background:'var(--red)',color:'#fff',fontWeight:700,fontSize:15,
+            padding:'13px 0',borderRadius:6,marginTop:4,marginBottom:16}}>Sign In</button>
+          <div style={{textAlign:'center',fontSize:12,color:'var(--t3)'}}>
+            <span style={{color:'var(--red)'}}>Forgot password?</span>
+          </div>
+        </> : <>
+          <Field label="Display Name" placeholder="Alex Johnson"/>
+          <Field label="SIUE Email" type="email" placeholder="ajohnson@siue.edu"/>
+          <Field label="Password" type="password" placeholder="Create a password"/>
+          <button style={{width:'100%',background:'var(--red)',color:'#fff',fontWeight:700,fontSize:15,
+            padding:'13px 0',borderRadius:6,marginTop:4}}>Create Account</button>
+        </>}
+      </div>
+    </div>
+  );
+};
+
+/* ────────────────────────────────────────────────────────── */
+/* 2. PROFESSORS BROWSE — Desktop                            */
+/* ────────────────────────────────────────────────────────── */
+const PROFS = [
+  {name:'Dr. Jane Smith',dept:'Computer Science',rating:4.6,diff:2.8,again:91,courses:['CS 201','CS 340'],reviews:24},
+  {name:'Prof. Alan Chen',dept:'Computer Science',rating:3.2,diff:4.1,again:62,courses:['CS 315'],reviews:11},
+  {name:'Dr. Maria Lopez',dept:'Mathematics',rating:4.1,diff:3.5,again:78,courses:['MATH 150','MATH 250'],reviews:38},
+  {name:'Dr. Kevin Park',dept:'Computer Science',rating:3.8,diff:4.5,again:70,courses:['CS 425'],reviews:19},
+  {name:'Prof. Sarah Wells',dept:'Physics',rating:4.4,diff:3.2,again:85,courses:['PHYS 151'],reviews:22},
+  {name:'Dr. Lin Huang',dept:'Mathematics',rating:4.8,diff:2.1,again:95,courses:['MATH 250','STAT 301'],reviews:41},
+];
+
+const ProfRow = ({ p, compact }) => {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{display:'flex',alignItems:'center',gap:compact?12:16,padding:compact?'11px 14px':'14px 20px',
+        background:hov?'var(--hover)':'transparent',borderBottom:'1px solid var(--border)',
+        cursor:'pointer',transition:'background .12s'}}>
+      <Avatar name={p.name} size={compact?36:42}/>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:compact?13:14,fontWeight:600,color:'var(--t1)',marginBottom:2,
+          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name}</div>
+        <div style={{fontSize:11,color:'var(--t3)'}}>{p.dept} · {p.reviews} reviews</div>
+      </div>
+      {!compact && <div style={{display:'flex',gap:compact?14:20,flexShrink:0}}>
+        {[['Rating',<RatingBadge v={p.rating}/>],['Difficulty',<RatingBadge v={p.diff}/>],
+          ['Again',<span style={{fontSize:13,fontWeight:700,color:p.again>=70?'var(--green)':'var(--yellow)'}}>{p.again}%</span>]
+        ].map(([l,v])=>(
+          <div key={l} style={{textAlign:'center',minWidth:60}}>
+            <div style={{fontSize:10,color:'var(--t3)',marginBottom:4,fontFamily:'var(--mono)',letterSpacing:'0.06em',textTransform:'uppercase'}}>{l}</div>
+            {v}
+          </div>
+        ))}
+      </div>}
+      {compact && <div style={{display:'flex',gap:6,flexShrink:0}}>
+        <RatingBadge v={p.rating}/>
+        <span style={{fontSize:12,fontWeight:600,color:p.again>=70?'var(--green)':'var(--yellow)'}}>{p.again}%</span>
+      </div>}
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth={2}><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+  );
+};
+
+const ProfessorsDesktop = () => {
+  const [search, setSearch] = useState('');
+  const [dept, setDept] = useState('All');
+  const [sort, setSort] = useState('rating');
+  const filtered = PROFS.filter(p =>
+    (dept==='All' || p.dept===dept) &&
+    p.name.toLowerCase().includes(search.toLowerCase())
+  ).sort((a,b) => b[sort==='rating'?'rating':sort==='again'?'again':'reviews'] - a[sort==='rating'?'rating':sort==='again'?'again':'reviews']);
+
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar/>
+      <div style={{flex:1,overflowY:'auto',padding:'28px 32px'}}>
+        <div style={{maxWidth:860,margin:'0 auto'}}>
+          {/* Header */}
+          <div style={{marginBottom:24}}>
+            <h1 style={{fontFamily:'var(--mono)',fontSize:26,fontWeight:700,marginBottom:4}}>Professors</h1>
+            <div style={{fontSize:14,color:'var(--t3)'}}>{PROFS.length} SIUE instructors · RMP data updated Spring 2026</div>
+          </div>
+          {/* Filters bar */}
+          <div style={{display:'flex',gap:10,marginBottom:20,alignItems:'center'}}>
+            <div style={{flex:1,position:'relative'}}>
+              <svg style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',width:15,height:15,color:'var(--t3)',pointerEvents:'none'}} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name..."
+                style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'9px 14px 9px 36px',fontSize:14,color:'var(--t1)',outline:'none'}}
+                onFocus={e=>{e.target.style.borderColor='var(--red)';e.target.style.boxShadow='0 0 0 3px rgba(200,16,46,.1)'}}
+                onBlur={e=>{e.target.style.borderColor='var(--border)';e.target.style.boxShadow='none'}}/>
+            </div>
+            <select value={dept} onChange={e=>setDept(e.target.value)}
+              style={{background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'9px 14px',fontSize:14,color:'var(--t1)',outline:'none',minWidth:190}}>
+              <option value="All">All Departments</option>
+              <option>Computer Science</option><option>Mathematics</option><option>Physics</option>
+            </select>
+            <select value={sort} onChange={e=>setSort(e.target.value)}
+              style={{background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'9px 14px',fontSize:14,color:'var(--t1)',outline:'none',minWidth:160}}>
+              <option value="rating">Sort: Rating</option>
+              <option value="again">Sort: Would Again</option>
+              <option value="reviews">Sort: Reviews</option>
+            </select>
+          </div>
+          {/* Stats strip */}
+          <div style={{display:'flex',gap:1,marginBottom:20,background:'var(--border)',borderRadius:8,overflow:'hidden'}}>
+            {[['Avg Rating','4.1'],['Avg Difficulty','3.3'],['Avg Would Again','76%']].map(([l,v])=>(
+              <div key={l} style={{flex:1,background:'var(--card)',padding:'12px 16px'}}>
+                <div style={{fontSize:10,fontFamily:'var(--mono)',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--t3)',marginBottom:4}}>{l}</div>
+                <div style={{fontSize:18,fontWeight:700,color:'var(--t1)',fontFamily:'var(--mono)'}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          {/* Table */}
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,overflow:'hidden'}}>
+            <div style={{display:'flex',padding:'10px 20px',borderBottom:'1px solid var(--border)',background:'rgba(255,255,255,.02)'}}>
+              <div style={{flex:1,fontSize:10,fontFamily:'var(--mono)',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--t3)'}}>Instructor</div>
+              {['Rating','Difficulty','Again'].map(h=>(
+                <div key={h} style={{width:80,textAlign:'center',fontSize:10,fontFamily:'var(--mono)',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--t3)'}}>{h}</div>
+              ))}
+              <div style={{width:14}}/>
+            </div>
+            {filtered.map(p=><ProfRow key={p.name} p={p}/>)}
+            {filtered.length===0 && <div style={{padding:'40px 0',textAlign:'center',color:'var(--t3)',fontSize:14}}>No professors match your search.</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── PROFESSORS — Mobile ───────────────────────────────── */
+const ProfessorsMobile = () => {
+  const [search, setSearch] = useState('');
+  const filtered = PROFS.filter(p=>p.name.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar mobile/>
+      <div style={{flex:1,overflowY:'auto'}}>
+        <div style={{padding:'16px 16px 12px'}}>
+          <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700,marginBottom:12}}>Professors</div>
+          <div style={{position:'relative'}}>
+            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:14,height:14,color:'var(--t3)',pointerEvents:'none'}} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search professors..."
+              style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'9px 12px 9px 32px',fontSize:14,color:'var(--t1)',outline:'none'}}/>
+          </div>
+        </div>
+        <div style={{background:'var(--card)',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)'}}>
+          {filtered.map(p=><ProfRow key={p.name} p={p} compact/>)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ────────────────────────────────────────────────────────── */
+/* 3. SCHEDULE BUILDER — Desktop                             */
+/* ────────────────────────────────────────────────────────── */
+const SCHED_COURSES = [
+  {id:1,code:'CS 201',name:'Intro to Programming',days:['M','W','F'],startH:9,endH:9.833,color:'rgba(200,16,46,.22)',textCol:'#fca5a5',border:'#c8102e',crn:'24601',location:'Science East 1026'},
+  {id:2,code:'MATH 150',name:'Calculus I',days:['M','W','F'],startH:10,endH:10.833,color:'rgba(34,197,94,.18)',textCol:'#4ade80',border:'#22c55e',crn:'24603',location:'Peck Hall 1201'},
+  {id:3,code:'PHYS 151',name:'Physics I',days:['T','R'],startH:9.5,endH:10.75,color:'rgba(59,130,246,.2)',textCol:'#93c5fd',border:'#3b82f6',crn:'24605',location:'Science West 2101'},
+];
+const DAY_MAP_IDX = {M:0,T:1,W:2,R:3,F:4};
+const HOURS = [8,9,10,11,12,13,14,15,16];
+const fmtH = h => { const hh=Math.floor(h); return `${hh<=12?hh:hh-12}${hh<12?'am':'pm'}`; };
+
+const ScheduleDesktop = () => {
+  const [selected, setSelected] = useState(null);
+  const cellH = 56;
+
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar/>
+      <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+        {/* Sidebar */}
+        <div style={{width:260,borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',flexShrink:0,overflow:'hidden'}}>
+          <div style={{padding:'16px 16px 10px',borderBottom:'1px solid var(--border)'}}>
+            <div style={{fontFamily:'var(--mono)',fontSize:11,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:10}}>Added Courses</div>
+            <div style={{fontSize:12,color:'var(--t3)'}}>{SCHED_COURSES.length} courses · {SCHED_COURSES.reduce((_,__)=>_+3,0)} credits</div>
+          </div>
+          <div style={{flex:1,overflowY:'auto'}}>
+            {SCHED_COURSES.map(c=>(
+              <div key={c.id} onClick={()=>setSelected(selected?.id===c.id?null:c)}
+                style={{padding:'12px 16px',borderBottom:'1px solid var(--border)',cursor:'pointer',
+                  background:selected?.id===c.id?'var(--hover)':'transparent',transition:'background .12s'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                  <div style={{width:3,height:32,borderRadius:2,background:c.border,flexShrink:0}}/>
+                  <div>
+                    <div style={{fontSize:12,fontFamily:'var(--mono)',color:c.textCol,marginBottom:1}}>{c.code}</div>
+                    <div style={{fontSize:12,color:'var(--t2)',lineHeight:1.3}}>{c.name}</div>
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:6,paddingLeft:11}}>
+                  {['M','T','W','R','F'].map(d=>(
+                    <span key={d} style={{fontSize:10,fontWeight:600,padding:'1px 5px',borderRadius:9999,
+                      background:c.days.includes(d)?c.border:'var(--input)',color:c.days.includes(d)?'#fff':'var(--t3)'}}>{d}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:12,borderTop:'1px solid var(--border)',display:'flex',gap:8}}>
+            <button style={{flex:1,background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'8px 0',
+              fontSize:12,fontWeight:600,color:'var(--t2)',cursor:'pointer'}}>Browse Courses</button>
+          </div>
+          <div style={{padding:'0 12px 12px'}}>
+            <button style={{width:'100%',background:'var(--red)',color:'#fff',borderRadius:6,
+              padding:'9px 0',fontSize:13,fontWeight:700,cursor:'pointer',border:'none'}}>Save Schedule</button>
+          </div>
+        </div>
+
+        {/* Calendar */}
+        <div style={{flex:1,overflow:'auto',padding:'0 0 0 0'}}>
+          <div style={{minWidth:560}}>
+            {/* Header row */}
+            <div style={{display:'grid',gridTemplateColumns:'52px repeat(5,1fr)',borderBottom:'1px solid var(--border)',
+              position:'sticky',top:0,background:'var(--bg)',zIndex:10}}>
+              <div style={{borderRight:'1px solid var(--border)'}}/>
+              {['MON','TUE','WED','THU','FRI'].map((d,i)=>(
+                <div key={d} style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.1em',color:'var(--t3)',
+                  padding:'10px 0',textAlign:'center',borderRight:i<4?'1px solid var(--border)':''}}>{d}</div>
+              ))}
+            </div>
+            {/* Time grid */}
+            <div style={{position:'relative'}}>
+              {HOURS.map((h,hi)=>(
+                <div key={h} style={{display:'grid',gridTemplateColumns:'52px repeat(5,1fr)',
+                  height:cellH,borderBottom:`1px solid rgba(46,50,68,${hi%2===0?.5:.25})`}}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:9,color:'var(--t3)',padding:'4px 6px',
+                    borderRight:'1px solid var(--border)',verticalAlign:'top'}}>{fmtH(h)}</div>
+                  {[0,1,2,3,4].map(di=>(
+                    <div key={di} style={{borderRight:di<4?'1px solid rgba(46,50,68,.3)':''}}/>
+                  ))}
+                </div>
+              ))}
+              {/* Event blocks */}
+              {SCHED_COURSES.map(c=>
+                c.days.map(d=>{
+                  const di = DAY_MAP_IDX[d];
+                  if (di===undefined) return null;
+                  const topPx = (c.startH - HOURS[0]) * cellH;
+                  const h = (c.endH - c.startH) * cellH - 3;
+                  const colW = `calc((100% - 52px) / 5)`;
+                  const left = `calc(52px + ${di} * ${colW} + 3px)`;
+                  const width = `calc(${colW} - 6px)`;
+                  return (
+                    <div key={`${c.id}-${d}`} onClick={()=>setSelected(selected?.id===c.id?null:c)}
+                      style={{position:'absolute',top:topPx+2,left,width,height:h,
+                        background:c.color,borderRadius:5,padding:'5px 8px',
+                        borderLeft:`2px solid ${c.border}`,cursor:'pointer',
+                        boxShadow:selected?.id===c.id?`0 0 0 2px ${c.border}`:'none',
+                        transition:'box-shadow .12s',overflow:'hidden'}}>
+                      <div style={{fontSize:11,fontWeight:700,color:c.textCol,lineHeight:1.2}}>{c.code}</div>
+                      <div style={{fontSize:10,color:c.textCol,opacity:.75,marginTop:1}}>{fmtH(c.startH)}–{fmtH(c.endH)}</div>
+                      {h>40 && <div style={{fontSize:10,color:c.textCol,opacity:.6,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.location}</div>}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Detail panel — shows when a course is selected */}
+        {selected && (
+          <div style={{width:220,borderLeft:'1px solid var(--border)',padding:16,flexShrink:0}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+              <span style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--t3)'}}>Section Info</span>
+              <button onClick={()=>setSelected(null)} style={{background:'none',border:'none',color:'var(--t3)',cursor:'pointer',fontSize:16,lineHeight:1}}>×</button>
+            </div>
+            <div style={{fontFamily:'var(--mono)',fontSize:13,color:selected.textCol,marginBottom:4}}>{selected.code}</div>
+            <div style={{fontSize:13,fontWeight:600,color:'var(--t1)',marginBottom:12,lineHeight:1.3}}>{selected.name}</div>
+            {[['CRN',<span style={{fontFamily:'var(--mono)',fontSize:12}}>{selected.crn}</span>],
+              ['Days',<div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{['M','T','W','R','F'].map(d=><span key={d} style={{fontSize:10,fontWeight:600,padding:'1px 5px',borderRadius:9999,background:selected.days.includes(d)?selected.border:'var(--input)',color:selected.days.includes(d)?'#fff':'var(--t3)'}}>{d}</span>)}</div>],
+              ['Location',<span style={{fontSize:12,color:'var(--t2)'}}>{selected.location}</span>]
+            ].map(([l,v])=>(
+              <div key={l} style={{marginBottom:12}}>
+                <div style={{fontSize:10,fontFamily:'var(--mono)',letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--t3)',marginBottom:4}}>{l}</div>
+                {v}
+              </div>
+            ))}
+            <button onClick={()=>setSelected(null)} style={{width:'100%',background:'rgba(239,68,68,.1)',color:'var(--err)',border:'1px solid rgba(239,68,68,.25)',
+              borderRadius:6,padding:'7px 0',fontSize:12,fontWeight:600,cursor:'pointer',marginTop:4}}>Remove</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─── SCHEDULE — Mobile ─────────────────────────────────── */
+const ScheduleMobile = () => {
+  const [view, setView] = useState('week');
+  const cellH = 44;
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar mobile/>
+      {/* View toggle */}
+      <div style={{padding:'10px 16px',borderBottom:'1px solid var(--border)',display:'flex',gap:8,alignItems:'center',flexShrink:0}}>
+        <div style={{display:'flex',background:'var(--input)',borderRadius:6,padding:2,gap:2}}>
+          {['week','list'].map(v=>(
+            <button key={v} onClick={()=>setView(v)} style={{padding:'5px 14px',borderRadius:4,fontSize:12,fontWeight:600,
+              background:view===v?'var(--card)':'transparent',color:view===v?'var(--t1)':'var(--t3)',border:view===v?'1px solid var(--border)':'1px solid transparent'}}>
+              {v==='week'?'Week':'List'}
+            </button>
+          ))}
+        </div>
+        <span style={{fontSize:12,color:'var(--t3)',marginLeft:'auto'}}>{SCHED_COURSES.length} courses</span>
+      </div>
+      <div style={{flex:1,overflow:'auto'}}>
+        {view==='week' ? (
+          <div style={{minWidth:320}}>
+            <div style={{display:'grid',gridTemplateColumns:'36px repeat(5,1fr)',borderBottom:'1px solid var(--border)',
+              position:'sticky',top:0,background:'var(--bg)',zIndex:10}}>
+              <div/>
+              {['M','T','W','R','F'].map((d,i)=>(
+                <div key={d} style={{fontFamily:'var(--mono)',fontSize:9,letterSpacing:'0.08em',color:'var(--t3)',
+                  padding:'7px 0',textAlign:'center',borderLeft:'1px solid var(--border)'}}>{d}</div>
+              ))}
+            </div>
+            <div style={{position:'relative'}}>
+              {HOURS.map((h,hi)=>(
+                <div key={h} style={{display:'grid',gridTemplateColumns:'36px repeat(5,1fr)',height:cellH,borderBottom:`1px solid rgba(46,50,68,${hi%2===0?.4:.2})`}}>
+                  <div style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--t3)',padding:'3px 4px',borderRight:'1px solid var(--border)'}}>{fmtH(h)}</div>
+                  {[0,1,2,3,4].map(di=><div key={di} style={{borderLeft:'1px solid rgba(46,50,68,.25)'}}/>)}
+                </div>
+              ))}
+              {SCHED_COURSES.map(c=>c.days.map(d=>{
+                const di=DAY_MAP_IDX[d]; if(di===undefined) return null;
+                const topPx=(c.startH-HOURS[0])*cellH;
+                const h=(c.endH-c.startH)*cellH-2;
+                const colW=`calc((100% - 36px)/5)`;
+                return <div key={`${c.id}-${d}`} style={{position:'absolute',top:topPx+1,
+                  left:`calc(36px + ${di}*${colW} + 2px)`,width:`calc(${colW} - 4px)`,height:h,
+                  background:c.color,borderRadius:3,padding:'3px 4px',borderLeft:`2px solid ${c.border}`,overflow:'hidden'}}>
+                  <div style={{fontSize:9,fontWeight:700,color:c.textCol}}>{c.code}</div>
+                </div>;
+              }))}
+            </div>
+          </div>
+        ) : (
+          <div>
+            {SCHED_COURSES.map(c=>(
+              <div key={c.id} style={{padding:'14px 16px',borderBottom:'1px solid var(--border)',display:'flex',gap:12,alignItems:'center'}}>
+                <div style={{width:3,height:40,borderRadius:2,background:c.border,flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontFamily:'var(--mono)',color:c.textCol,marginBottom:2}}>{c.code}</div>
+                  <div style={{fontSize:14,fontWeight:600,color:'var(--t1)',marginBottom:4}}>{c.name}</div>
+                  <div style={{display:'flex',gap:4}}>
+                    {['M','T','W','R','F'].map(d=><span key={d} style={{fontSize:10,fontWeight:600,padding:'1px 5px',borderRadius:9999,background:c.days.includes(d)?c.border:'var(--input)',color:c.days.includes(d)?'#fff':'var(--t3)'}}>{d}</span>)}
+                  </div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth={2}><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{padding:12,borderTop:'1px solid var(--border)',flexShrink:0}}>
+        <button style={{width:'100%',background:'var(--red)',color:'#fff',fontWeight:700,fontSize:14,padding:'12px 0',borderRadius:6,border:'none',cursor:'pointer'}}>Save Schedule</button>
+      </div>
+    </div>
+  );
+};
+
+/* ── Root: design canvas ────────────────────────────────── */
+function App() {
+  return (
+    <DesignCanvas title="CougarPlanner — Screen Mockups">
+      <DCSection id="auth" title="Login / Register">
+        <DCArtboard id="login-desktop" label="Desktop — 1280×760" width={1280} height={760}>
+          <LoginDesktop/>
+        </DCArtboard>
+        <DCArtboard id="login-mobile" label="Mobile — 390×780" width={390} height={780}>
+          <LoginMobile/>
+        </DCArtboard>
+      </DCSection>
+      <DCSection id="profs" title="Professors Browse">
+        <DCArtboard id="profs-desktop" label="Desktop — 1280×760" width={1280} height={760}>
+          <ProfessorsDesktop/>
+        </DCArtboard>
+        <DCArtboard id="profs-mobile" label="Mobile — 390×780" width={390} height={780}>
+          <ProfessorsMobile/>
+        </DCArtboard>
+      </DCSection>
+      <DCSection id="sched" title="Schedule Builder">
+        <DCArtboard id="sched-desktop" label="Desktop — 1280×760" width={1280} height={760}>
+          <ScheduleDesktop/>
+        </DCArtboard>
+        <DCArtboard id="sched-mobile" label="Mobile — 390×780" width={390} height={780}>
+          <ScheduleMobile/>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

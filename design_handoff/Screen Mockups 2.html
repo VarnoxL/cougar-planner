@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CougarPlanner — More Screens</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --red:#c8102e; --red-h:#a50e26; --rl:rgba(200,16,46,0.12);
+  --bg:#0f1117; --card:#1a1d27; --input:#252836; --hover:#2e3244;
+  --border:#2e3244; --t1:#e8eaed; --t2:#9ca3af; --t3:#6b7280;
+  --green:#22c55e; --yellow:#eab308; --err:#ef4444;
+  --sans:'DM Sans',system-ui,sans-serif; --mono:'Space Mono',monospace;
+}
+body { background:#111318; font-family:var(--sans); color:var(--t1); }
+button { font-family:var(--sans); cursor:pointer; border:none; outline:none; }
+input,select,textarea { font-family:var(--sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+/* ── Atoms ──────────────────────────────────────────────── */
+const RatingBadge = ({ v }) => {
+  if (v == null) return <span style={{fontSize:11,color:'var(--t3)'}}>—</span>;
+  const [bg,col] = v>=4?['rgba(34,197,94,.13)','#22c55e']:v>=3?['rgba(234,179,8,.13)','#eab308']:['rgba(239,68,68,.13)','#ef4444'];
+  return <span style={{fontFamily:'var(--mono)',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:4,background:bg,color:col}}>{v.toFixed(1)}</span>;
+};
+const SeatsBadge = ({ open, total }) => {
+  const r=open/total;
+  const [bg,col,bdr]=r>0.3?['rgba(34,197,94,.1)','#22c55e','rgba(34,197,94,.25)']:r>0?['rgba(234,179,8,.1)','#eab308','rgba(234,179,8,.25)']:['rgba(239,68,68,.1)','#ef4444','rgba(239,68,68,.25)'];
+  return <span style={{fontFamily:'var(--mono)',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:4,background:bg,color:col,border:`1px solid ${bdr}`}}>{open}/{total}</span>;
+};
+const DayPills = ({ days, small }) => ['M','T','W','R','F'].map(d=>(
+  <span key={d} style={{fontSize:small?10:11,fontWeight:600,padding:small?'1px 5px':'2px 7px',borderRadius:9999,
+    background:days.includes(d)?'var(--red)':'var(--input)',color:days.includes(d)?'#fff':'var(--t3)'}}>{d}</span>
+));
+const Tag = ({ children, red }) => (
+  <span style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',
+    color:red?'var(--red)':'var(--t3)',border:`1px solid ${red?'rgba(200,16,46,.3)':'var(--border)'}`,
+    padding:'2px 8px',borderRadius:2}}>{children}</span>
+);
+const Avatar = ({ name, size=36 }) => (
+  <div style={{width:size,height:size,borderRadius:'50%',background:'var(--input)',border:'1px solid var(--border)',
+    display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--mono)',
+    fontSize:size*.35,fontWeight:700,color:'var(--red)',flexShrink:0}}>
+    {name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+  </div>
+);
+const Btn = ({ children, variant='primary', small, full, style:s={}, onClick }) => {
+  const [pressed,setPressed]=useState(false);
+  const sz=small?{fontSize:13,padding:'6px 14px'}:{fontSize:14,padding:'10px 20px'};
+  const vs={
+    primary:{background:'var(--red)',color:'#fff'},
+    secondary:{background:'var(--card)',color:'var(--t1)',border:'1px solid var(--border)'},
+    ghost:{background:'transparent',color:'var(--t2)',border:'1px solid var(--border)'},
+    danger:{background:'rgba(239,68,68,.12)',color:'var(--err)',border:'1px solid rgba(239,68,68,.25)'},
+    outline:{background:'transparent',color:'var(--red)',border:'1px solid var(--red)'},
+  }[variant]||{};
+  return <button onClick={onClick} onMouseDown={()=>setPressed(true)} onMouseUp={()=>setPressed(false)} onMouseLeave={()=>setPressed(false)}
+    style={{...sz,...vs,borderRadius:6,fontWeight:600,cursor:'pointer',transition:'all .12s',
+      transform:pressed?'scale(0.97)':'scale(1)',width:full?'100%':undefined,...s}}>{children}</button>;
+};
+const Navbar = ({ active, mobile }) => (
+  <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',
+    height:mobile?52:56,display:'flex',alignItems:'center',padding:mobile?'0 16px':'0 24px',flexShrink:0}}>
+    <span style={{fontFamily:'var(--mono)',fontSize:mobile?14:16,fontWeight:700,color:'var(--t1)',marginRight:mobile?'auto':32}}>
+      Cougar<span style={{color:'var(--red)'}}>Planner</span>
+    </span>
+    {!mobile && ['Courses','Professors','Schedule','My Schedules'].map(l=>(
+      <span key={l} style={{fontSize:14,fontWeight:500,padding:'5px 10px',borderRadius:4,marginRight:2,cursor:'pointer',
+        color:l===active?'var(--t1)':'var(--t2)',background:l===active?'var(--card)':'transparent'}}>{l}</span>
+    ))}
+    {mobile
+      ? <svg style={{marginLeft:'auto'}} width="20" height="20" fill="none" stroke="var(--t2)" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      : <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+          <Avatar name="Alex Johnson" size={30}/>
+          <span style={{fontSize:13,color:'var(--t2)',display:'flex',alignItems:'center',gap:4}}>alexj <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+        </div>
+    }
+  </div>
+);
+const GradeBar = ({ grade, pct, color }) => (
+  <div style={{display:'flex',alignItems:'center',gap:10}}>
+    <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--t3)',width:12}}>{grade}</span>
+    <div style={{flex:1,height:8,background:'var(--input)',borderRadius:4,overflow:'hidden'}}>
+      <div style={{width:`${pct}%`,height:'100%',background:color,borderRadius:4}}/>
+    </div>
+    <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--t3)',width:32,textAlign:'right'}}>{pct}%</span>
+  </div>
+);
+
+/* ── DATA ───────────────────────────────────────────────── */
+const COURSES = [
+  {id:1,code:'CS 201',name:'Intro to Programming',credits:3,sections:4,subject:'CS',desc:'Fundamentals of programming using Python. Variables, control flow, functions, and OOP basics.',professor:{name:'Dr. Jane Smith',rating:4.6,diff:2.8,again:91},days:['M','W','F'],time:'9:00–9:50 AM',seats:{open:22,total:30},crn:'24601',location:'Science East 1026',delivery:'In Person'},
+  {id:2,code:'CS 315',name:'Data Structures',credits:3,sections:3,subject:'CS',desc:'Arrays, linked lists, trees, graphs, and algorithm analysis in Java.',professor:{name:'Prof. Alan Chen',rating:3.2,diff:4.1,again:62},days:['T','R'],time:'11:00 AM–12:15 PM',seats:{open:5,total:25},crn:'24602',location:'Engineering A 210',delivery:'In Person'},
+  {id:3,code:'MATH 150',name:'Calculus I',credits:4,sections:6,subject:'MATH',desc:'Limits, derivatives, and integrals of single-variable functions.',professor:{name:'Dr. Maria Lopez',rating:4.1,diff:3.5,again:78},days:['M','W','F'],time:'10:00–10:50 AM',seats:{open:0,total:35},crn:'24603',location:'Peck Hall 1201',delivery:'In Person'},
+  {id:4,code:'CS 425',name:'Algorithms',credits:3,sections:2,subject:'CS',desc:'Algorithm design, complexity analysis, greedy and dynamic programming.',professor:{name:'Dr. Kevin Park',rating:3.8,diff:4.5,again:70},days:['M','W'],time:'2:00–3:15 PM',seats:{open:12,total:20},crn:'24604',location:'Engineering A 110',delivery:'In Person'},
+  {id:5,code:'PHYS 151',name:'Physics I',credits:4,sections:4,subject:'PHYS',desc:'Mechanics, kinematics, Newton\'s laws, energy and momentum.',professor:{name:'Prof. Sarah Wells',rating:4.4,diff:3.2,again:85},days:['T','R'],time:'9:30–10:45 AM',seats:{open:18,total:30},crn:'24605',location:'Science West 2101',delivery:'In Person'},
+  {id:6,code:'CS 340',name:'Database Systems',credits:3,sections:2,subject:'CS',desc:'Relational databases, SQL, normalization, and transactions.',professor:{name:'Dr. Jane Smith',rating:4.6,diff:2.8,again:91},days:['M','W'],time:'3:30–4:45 PM',seats:{open:9,total:20},crn:'24606',location:'Science East 1026',delivery:'In Person'},
+  {id:7,code:'ENGL 101',name:'Composition I',credits:3,sections:8,subject:'ENGL',desc:'Academic writing fundamentals: argumentation, research, and revision.',professor:null,days:['T','R'],time:'12:30–1:45 PM',seats:{open:3,total:25},crn:'24607',location:'Peck Hall 2201',delivery:'In Person'},
+];
+
+/* ══════════════════════════════════════════════════════════ */
+/* SCREEN 1: COURSES BROWSE — Desktop                        */
+/* ══════════════════════════════════════════════════════════ */
+const CoursesDesktop = () => {
+  const [search, setSearch] = useState('');
+  const [subject, setSubject] = useState('All');
+  const [delivery, setDelivery] = useState('All');
+  const [selected, setSelected] = useState(COURSES[0]);
+
+  const filtered = COURSES.filter(c =>
+    (subject==='All'||c.subject===subject) &&
+    (delivery==='All'||c.delivery===delivery) &&
+    (c.name.toLowerCase().includes(search.toLowerCase())||c.code.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar active="Courses"/>
+      <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+        {/* Left: list */}
+        <div style={{width:420,borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',flexShrink:0,overflow:'hidden'}}>
+          {/* Filters */}
+          <div style={{padding:'14px 16px',borderBottom:'1px solid var(--border)',display:'flex',flexDirection:'column',gap:8}}>
+            <div style={{position:'relative'}}>
+              <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:14,height:14,color:'var(--t3)',pointerEvents:'none'}} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search courses..."
+                style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'8px 12px 8px 32px',fontSize:13,color:'var(--t1)',outline:'none'}}
+                onFocus={e=>{e.target.style.borderColor='var(--red)'}} onBlur={e=>{e.target.style.borderColor='var(--border)'}}/>
+            </div>
+            <div style={{display:'flex',gap:6}}>
+              <select value={subject} onChange={e=>setSubject(e.target.value)}
+                style={{flex:1,background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'7px 10px',fontSize:12,color:'var(--t1)',outline:'none'}}>
+                <option value="All">All Subjects</option>
+                <option value="CS">CS</option><option value="MATH">MATH</option><option value="PHYS">PHYS</option><option value="ENGL">ENGL</option>
+              </select>
+              <select value={delivery} onChange={e=>setDelivery(e.target.value)}
+                style={{flex:1,background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'7px 10px',fontSize:12,color:'var(--t1)',outline:'none'}}>
+                <option value="All">All Delivery</option>
+                <option value="In Person">In Person</option><option value="Online">Online</option>
+              </select>
+            </div>
+            <div style={{fontSize:11,color:'var(--t3)',fontFamily:'var(--mono)',letterSpacing:'0.06em'}}>{filtered.length} courses</div>
+          </div>
+          {/* List */}
+          <div style={{flex:1,overflowY:'auto'}}>
+            {filtered.map(c=>(
+              <div key={c.id} onClick={()=>setSelected(c)}
+                style={{padding:'12px 16px',borderBottom:'1px solid var(--border)',cursor:'pointer',
+                  background:selected?.id===c.id?'var(--hover)':'transparent',transition:'background .1s',
+                  borderLeft:`2px solid ${selected?.id===c.id?'var(--red)':'transparent'}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:5}}>
+                  <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                    <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--red)',letterSpacing:'0.06em',textTransform:'uppercase'}}>{c.code}</span>
+                    <Tag>{c.credits} CR</Tag>
+                  </div>
+                  <SeatsBadge open={c.seats.open} total={c.seats.total}/>
+                </div>
+                <div style={{fontSize:13,fontWeight:600,color:'var(--t1)',marginBottom:4,lineHeight:1.3}}>{c.name}</div>
+                <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                  {['M','T','W','R','F'].map(d=>(
+                    <span key={d} style={{fontSize:10,fontWeight:600,padding:'1px 5px',borderRadius:9999,
+                      background:c.days.includes(d)?'var(--red)':'var(--input)',color:c.days.includes(d)?'#fff':'var(--t3)'}}>{d}</span>
+                  ))}
+                  <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--t3)',marginLeft:2}}>{c.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: detail panel */}
+        {selected ? (
+          <div style={{flex:1,overflowY:'auto',padding:'24px 28px'}}>
+            {/* Header */}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+              <div>
+                <div style={{display:'flex',gap:6,marginBottom:8}}><Tag red>{selected.code}</Tag><Tag>{selected.credits} Credits</Tag><Tag>{selected.delivery}</Tag></div>
+                <h2 style={{fontFamily:'var(--mono)',fontSize:22,fontWeight:700,marginBottom:6}}>{selected.name}</h2>
+                <p style={{fontSize:13,color:'var(--t2)',lineHeight:1.65,maxWidth:440}}>{selected.desc}</p>
+              </div>
+              <Btn variant="primary">Add to Schedule</Btn>
+            </div>
+
+            {/* Section info card */}
+            <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:18,marginBottom:14}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:14}}>Section · Spring 2026</div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+                {[
+                  ['CRN', <span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--t1)'}}>{selected.crn}</span>],
+                  ['Schedule', <div style={{display:'flex',gap:4,flexWrap:'wrap'}}><DayPills days={selected.days} small/></div>],
+                  ['Time', <span style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--t1)'}}>{selected.time}</span>],
+                  ['Location', <span style={{fontSize:13,color:'var(--t1)'}}>{selected.location}</span>],
+                  ['Seats', <SeatsBadge open={selected.seats.open} total={selected.seats.total}/>],
+                  ['Sections', <span style={{fontSize:13,color:'var(--t1)'}}>{selected.sections} available</span>],
+                ].map(([l,v])=>(
+                  <div key={l}>
+                    <div style={{fontSize:11,color:'var(--t3)',marginBottom:5}}>{l}</div>
+                    {v}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Professor card */}
+            {selected.professor ? (
+              <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:18,marginBottom:14}}>
+                <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:14}}>Instructor — RMP Data</div>
+                <div style={{display:'flex',gap:14,alignItems:'center'}}>
+                  <Avatar name={selected.professor.name} size={44}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:600,color:'var(--t1)',marginBottom:2}}>{selected.professor.name}</div>
+                    <div style={{fontSize:12,color:'var(--t3)'}}>Computer Science</div>
+                  </div>
+                  <div style={{display:'flex',gap:20}}>
+                    {[['Rating',<RatingBadge v={selected.professor.rating}/>],
+                      ['Difficulty',<RatingBadge v={selected.professor.diff}/>],
+                      ['Again',<span style={{fontSize:13,fontWeight:700,color:selected.professor.again>=70?'var(--green)':'var(--yellow)'}}>{selected.professor.again}%</span>]
+                    ].map(([l,v])=>(
+                      <div key={l} style={{textAlign:'center'}}>
+                        <div style={{fontSize:10,color:'var(--t3)',marginBottom:4,fontFamily:'var(--mono)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{l}</div>
+                        {v}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:18,marginBottom:14}}>
+                <div style={{fontSize:13,color:'var(--t3)'}}>No instructor assigned for this section.</div>
+              </div>
+            )}
+
+            {/* Grade distribution */}
+            <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:18}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:14}}>Grade Distribution · All Semesters</div>
+              <div style={{display:'flex',flexDirection:'column',gap:7}}>
+                {[['A',48,'#22c55e'],['B',30,'#86efac'],['C',12,'#eab308'],['D',6,'#f97316'],['F',3,'#ef4444'],['W',1,'#6b7280']].map(([g,p,c])=>(
+                  <GradeBar key={g} grade={g} pct={p} color={c}/>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--t3)',fontSize:14}}>Select a course to view details</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ── COURSES — Mobile ───────────────────────────────────── */
+const CoursesMobile = () => {
+  const [search, setSearch] = useState('');
+  const [detailId, setDetailId] = useState(null);
+  const detail = COURSES.find(c=>c.id===detailId);
+  const filtered = COURSES.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())||c.code.toLowerCase().includes(search.toLowerCase()));
+
+  if (detail) return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar mobile/>
+      <div style={{flex:1,overflowY:'auto'}}>
+        <button onClick={()=>setDetailId(null)} style={{display:'flex',alignItems:'center',gap:6,padding:'12px 16px',background:'none',color:'var(--t3)',fontSize:13,width:'100%',borderBottom:'1px solid var(--border)'}}>
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg> Back
+        </button>
+        <div style={{padding:'16px 16px 0'}}>
+          <div style={{display:'flex',gap:6,marginBottom:8}}><Tag red>{detail.code}</Tag><Tag>{detail.credits} CR</Tag></div>
+          <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700,marginBottom:6,lineHeight:1.2}}>{detail.name}</div>
+          <p style={{fontSize:13,color:'var(--t2)',lineHeight:1.6,marginBottom:14}}>{detail.desc}</p>
+        </div>
+        {/* Section card */}
+        <div style={{margin:'0 12px 12px',background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:14}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            {[['CRN',<span style={{fontFamily:'var(--mono)',fontSize:12}}>{detail.crn}</span>],
+              ['Seats',<SeatsBadge open={detail.seats.open} total={detail.seats.total}/>],
+              ['Time',<span style={{fontSize:12}}>{detail.time}</span>],
+              ['Location',<span style={{fontSize:12}}>{detail.location}</span>],
+            ].map(([l,v])=>(
+              <div key={l}><div style={{fontSize:10,color:'var(--t3)',marginBottom:4}}>{l}</div>{v}</div>
+            ))}
+          </div>
+          <div style={{marginTop:12,display:'flex',gap:4}}><DayPills days={detail.days} small/></div>
+        </div>
+        {detail.professor && <div style={{margin:'0 12px 12px',background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:14,display:'flex',gap:10,alignItems:'center'}}>
+          <Avatar name={detail.professor.name} size={38}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:1}}>{detail.professor.name}</div>
+            <div style={{display:'flex',gap:8}}><RatingBadge v={detail.professor.rating}/><span style={{fontSize:12,color:detail.professor.again>=70?'var(--green)':'var(--yellow)',fontWeight:700}}>{detail.professor.again}% again</span></div>
+          </div>
+        </div>}
+        <div style={{padding:'0 12px 16px'}}>
+          <Btn variant="primary" full>Add to Schedule</Btn>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar mobile/>
+      <div style={{padding:'12px 12px 0',borderBottom:'1px solid var(--border)'}}>
+        <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700,marginBottom:10}}>Courses</div>
+        <div style={{position:'relative',marginBottom:10}}>
+          <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:14,height:14,color:'var(--t3)',pointerEvents:'none'}} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search courses..."
+            style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'9px 12px 9px 32px',fontSize:13,color:'var(--t1)',outline:'none'}}/>
+        </div>
+        <div style={{fontSize:11,color:'var(--t3)',fontFamily:'var(--mono)',paddingBottom:8}}>{filtered.length} results</div>
+      </div>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {filtered.map(c=>(
+          <div key={c.id} onClick={()=>setDetailId(c.id)}
+            style={{padding:'12px 14px',borderBottom:'1px solid var(--border)',cursor:'pointer'}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+              <span style={{fontFamily:'var(--mono)',fontSize:11,color:'var(--red)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{c.code}</span>
+              <SeatsBadge open={c.seats.open} total={c.seats.total}/>
+            </div>
+            <div style={{fontSize:14,fontWeight:600,color:'var(--t1)',marginBottom:5,lineHeight:1.3}}>{c.name}</div>
+            <div style={{display:'flex',gap:5,alignItems:'center'}}>
+              {['M','T','W','R','F'].map(d=>(
+                <span key={d} style={{fontSize:10,fontWeight:600,padding:'1px 5px',borderRadius:9999,background:c.days.includes(d)?'var(--red)':'var(--input)',color:c.days.includes(d)?'#fff':'var(--t3)'}}>{d}</span>
+              ))}
+              {c.professor && <><span style={{fontSize:11,color:'var(--t3)',marginLeft:4}}>{c.professor.name.split(' ').pop()}</span><RatingBadge v={c.professor.rating}/></>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════════════════════ */
+/* SCREEN 2: PROFESSOR DETAIL — Desktop                      */
+/* ══════════════════════════════════════════════════════════ */
+const REVIEWS = [
+  {user:'alexj',date:'Fall 2025',rating:4.8,diff:2.0,grade:'A',text:'Very clear explanations and always available during office hours. Labs are structured really well — you always know what\'s expected.'},
+  {user:'cmo99',date:'Spring 2025',rating:4.2,diff:3.2,grade:'B',text:'Engaging lectures. Exams are fair if you attend class. Her office hours are extremely helpful, especially before midterms.'},
+  {user:'trev_w',date:'Fall 2024',rating:3.8,diff:2.8,grade:'A',text:'Great professor overall. Assignments can pile up toward the end of semester but the grading is fair and she gives partial credit.'},
+];
+const ProfDetailDesktop = () => {
+  const [reviewText, setReviewText] = useState('');
+  const [rating, setRating] = useState(4);
+  const [submitted, setSubmitted] = useState(false);
+  const prof = {name:'Dr. Jane Smith',dept:'Computer Science',rating:4.6,diff:2.8,again:91,reviews:24,courses:['CS 201','CS 340']};
+
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar active="Professors"/>
+      <div style={{flex:1,overflowY:'auto',padding:'24px 32px'}}>
+        <div style={{maxWidth:820,margin:'0 auto'}}>
+          <button style={{display:'flex',alignItems:'center',gap:6,background:'none',color:'var(--t3)',fontSize:13,cursor:'pointer',marginBottom:20,padding:0}}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+            Back to Professors
+          </button>
+
+          {/* Hero card */}
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:24,marginBottom:14,display:'flex',gap:20,alignItems:'center',flexWrap:'wrap'}}>
+            <Avatar name={prof.name} size={64}/>
+            <div style={{flex:1}}>
+              <h1 style={{fontFamily:'var(--mono)',fontSize:22,fontWeight:700,marginBottom:4}}>{prof.name}</h1>
+              <div style={{fontSize:14,color:'var(--t3)',marginBottom:14}}>{prof.dept} · {prof.reviews} student reviews</div>
+              <div style={{display:'flex',gap:1,background:'var(--border)',borderRadius:8,overflow:'hidden',width:'fit-content'}}>
+                {[['Overall Rating',<div style={{display:'flex',alignItems:'center',gap:8}}><RatingBadge v={prof.rating}/><span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--t2)'}}>/ 5.0</span></div>],
+                  ['Difficulty',<div style={{display:'flex',alignItems:'center',gap:8}}><RatingBadge v={prof.diff}/><span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--t2)'}}>/ 5.0</span></div>],
+                  ['Would Take Again',<span style={{fontSize:18,fontWeight:700,color:prof.again>=70?'var(--green)':'var(--yellow)',fontFamily:'var(--mono)'}}>{prof.again}%</span>]
+                ].map(([l,v])=>(
+                  <div key={l} style={{background:'var(--card)',padding:'14px 20px',minWidth:160}}>
+                    <div style={{fontSize:10,fontFamily:'var(--mono)',letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--t3)',marginBottom:8}}>{l}</div>
+                    {v}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
+            {/* Courses taught */}
+            <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:18}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:12}}>Courses Taught</div>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{prof.courses.map(c=><Tag key={c} red>{c}</Tag>)}</div>
+            </div>
+            {/* Grade dist mini */}
+            <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:18}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:12}}>Grade Distribution</div>
+              <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                {[['A',48,'#22c55e'],['B',30,'#86efac'],['C',12,'#eab308'],['D',6,'#f97316'],['F',4,'#ef4444']].map(([g,p,c])=>(
+                  <GradeBar key={g} grade={g} pct={p} color={c}/>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Reviews */}
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:20,marginBottom:14}}>
+            <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:16}}>Student Reviews — {prof.reviews} total</div>
+            <div style={{display:'flex',flexDirection:'column',gap:0}}>
+              {REVIEWS.map((r,i)=>(
+                <div key={i} style={{padding:'14px 0',borderBottom:i<REVIEWS.length-1?'1px solid var(--border)':'none'}}>
+                  <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:8}}>
+                    <Avatar name={r.user} size={28}/>
+                    <span style={{fontSize:13,fontWeight:600}}>{r.user}</span>
+                    <span style={{fontSize:11,color:'var(--t3)'}}>{r.date}</span>
+                    <RatingBadge v={r.rating}/>
+                    <span style={{fontSize:11,color:'var(--t3)'}}>Difficulty: <span style={{color:'var(--t2)'}}>{r.diff.toFixed(1)}</span></span>
+                    <span style={{marginLeft:'auto',fontFamily:'var(--mono)',fontSize:11,color:'var(--t3)',background:'var(--input)',padding:'2px 8px',borderRadius:2}}>Grade: {r.grade}</span>
+                  </div>
+                  <p style={{fontSize:13,color:'var(--t2)',lineHeight:1.65,paddingLeft:38}}>{r.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Leave a review */}
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:8,padding:20}}>
+            <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:14}}>Leave a Review</div>
+            {submitted ? (
+              <div style={{display:'flex',alignItems:'center',gap:8,color:'var(--green)',fontSize:14,padding:'8px 0'}}>
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                Review submitted. Thank you!
+              </div>
+            ) : (
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+                <div>
+                  <div style={{marginBottom:14}}>
+                    <label style={{fontSize:12,color:'var(--t2)',display:'block',marginBottom:6}}>Your rating</label>
+                    <div style={{display:'flex',gap:4}}>
+                      {[1,2,3,4,5].map(n=><button key={n} onClick={()=>setRating(n)} style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:n<=rating?'var(--yellow)':'var(--border)',padding:2,transition:'color .1s'}}>★</button>)}
+                    </div>
+                  </div>
+                  <div style={{marginBottom:14}}>
+                    <label style={{fontSize:12,color:'var(--t2)',display:'block',marginBottom:6}}>Course taken</label>
+                    <select style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'9px 12px',fontSize:13,color:'var(--t1)',outline:'none'}}>
+                      <option>CS 201</option><option>CS 340</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{fontSize:12,color:'var(--t2)',display:'block',marginBottom:6}}>Grade received</label>
+                    <select style={{width:'100%',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'9px 12px',fontSize:13,color:'var(--t1)',outline:'none'}}>
+                      <option>A</option><option>B</option><option>C</option><option>D</option><option>F</option><option>W</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                  <div style={{flex:1,display:'flex',flexDirection:'column'}}>
+                    <label style={{fontSize:12,color:'var(--t2)',display:'block',marginBottom:6}}>Your review</label>
+                    <textarea value={reviewText} onChange={e=>setReviewText(e.target.value)} placeholder="Share your experience with this professor..."
+                      style={{flex:1,background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,padding:'10px 12px',fontSize:13,color:'var(--t1)',outline:'none',resize:'none',minHeight:80,lineHeight:1.6}}
+                      onFocus={e=>e.target.style.borderColor='var(--red)'} onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                  </div>
+                  <Btn variant="primary" onClick={()=>{if(reviewText) setSubmitted(true);}}>Submit Review</Btn>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── PROFESSOR DETAIL — Mobile ──────────────────────────── */
+const ProfDetailMobile = () => {
+  const [tab, setTab] = useState('info');
+  const prof = {name:'Dr. Jane Smith',dept:'Computer Science',rating:4.6,diff:2.8,again:91,reviews:24,courses:['CS 201','CS 340']};
+  return (
+    <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <Navbar mobile/>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {/* Header */}
+        <div style={{padding:'16px 14px 12px',borderBottom:'1px solid var(--border)'}}>
+          <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:12}}>
+            <Avatar name={prof.name} size={48}/>
+            <div>
+              <div style={{fontFamily:'var(--mono)',fontSize:16,fontWeight:700,lineHeight:1.2}}>{prof.name}</div>
+              <div style={{fontSize:12,color:'var(--t3)',marginTop:2}}>{prof.dept}</div>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:1,background:'var(--border)',borderRadius:8,overflow:'hidden'}}>
+            {[['Rating',<RatingBadge v={prof.rating}/>],['Difficulty',<RatingBadge v={prof.diff}/>],['Again',<span style={{fontSize:14,fontWeight:700,color:'var(--green)',fontFamily:'var(--mono)'}}>{prof.again}%</span>]].map(([l,v])=>(
+              <div key={l} style={{flex:1,background:'var(--card)',padding:'10px 8px',textAlign:'center'}}>
+                <div style={{fontSize:9,fontFamily:'var(--mono)',letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--t3)',marginBottom:5}}>{l}</div>
+                {v}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Tab bar */}
+        <div style={{display:'flex',borderBottom:'1px solid var(--border)'}}>
+          {['info','reviews','grades'].map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'10px 0',fontSize:12,fontWeight:600,
+              color:tab===t?'var(--t1)':'var(--t3)',background:'none',borderBottom:`2px solid ${tab===t?'var(--red)':'transparent'}`,
+              transition:'all .12s',textTransform:'capitalize'}}>
+              {t==='info'?'Info':t==='reviews'?`Reviews (${prof.reviews})`:'Grades'}
+            </button>
+          ))}
+        </div>
+        {tab==='info' && <div style={{padding:'14px 14px'}}>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:'var(--t3)',marginBottom:6}}>Courses Taught</div>
+            <div style={{display:'flex',gap:6}}>{prof.courses.map(c=><Tag key={c} red>{c}</Tag>)}</div>
+          </div>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:6,padding:12}}>
+            <div style={{fontSize:11,color:'var(--t3)',marginBottom:10}}>Grade Distribution</div>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {[['A',48,'#22c55e'],['B',30,'#86efac'],['C',12,'#eab308'],['D',6,'#f97316'],['F',4,'#ef4444']].map(([g,p,c])=>(
+                <GradeBar key={g} grade={g} pct={p} color={c}/>
+              ))}
+            </div>
+          </div>
+        </div>}
+        {tab==='reviews' && <div>
+          {REVIEWS.map((r,i)=>(
+            <div key={i} style={{padding:'12px 14px',borderBottom:'1px solid var(--border)'}}>
+              <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
+                <Avatar name={r.user} size={24}/>
+                <span style={{fontSize:12,fontWeight:600}}>{r.user}</span>
+                <span style={{fontSize:11,color:'var(--t3)'}}>{r.date}</span>
+                <RatingBadge v={r.rating}/>
+                <span style={{marginLeft:'auto',fontFamily:'var(--mono)',fontSize:10,color:'var(--t3)',background:'var(--input)',padding:'1px 6px',borderRadius:2}}>{r.grade}</span>
+              </div>
+              <p style={{fontSize:13,color:'var(--t2)',lineHeight:1.6}}>{r.text}</p>
+            </div>
+          ))}
+        </div>}
+        {tab==='grades' && <div style={{padding:'14px 14px'}}>
+          <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:6,padding:14}}>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {[['A',48,'#22c55e'],['B',30,'#86efac'],['C',12,'#eab308'],['D',6,'#f97316'],['F',4,'#ef4444'],['W',1,'#6b7280']].map(([g,p,c])=>(
+                <GradeBar key={g} grade={g} pct={p} color={c}/>
+              ))}
+            </div>
+          </div>
+        </div>}
+      </div>
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════════════════════ */
+/* SCREEN 3: COMPONENTS — Modals, Empty States, Misc         */
+/* ══════════════════════════════════════════════════════════ */
+const ConflictModalDemo = () => (
+  <div style={{width:'100%',height:'100%',background:'rgba(0,0,0,.65)',display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(3px)'}}>
+    <div style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:28,width:400,boxShadow:'0 16px 48px rgba(0,0,0,.7)'}}>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+        <div style={{width:32,height:32,borderRadius:8,background:'rgba(239,68,68,.12)',border:'1px solid rgba(239,68,68,.25)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <svg width="16" height="16" fill="none" stroke="#ef4444" strokeWidth={2} viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <div style={{fontSize:15,fontWeight:700,color:'var(--t1)'}}>Schedule Conflict</div>
+          <div style={{fontSize:12,color:'var(--t3)'}}>This section overlaps with an existing course</div>
+        </div>
+      </div>
+      <div style={{background:'var(--bg)',borderRadius:6,padding:14,marginBottom:16,display:'flex',flexDirection:'column',gap:8}}>
+        {[['CS 201 — MWF 9:00–9:50 AM','Existing',false],['CS 310 — MWF 9:30–10:45 AM','Conflict',true]].map(([label,tag,conflict])=>(
+          <div key={label} style={{display:'flex',gap:10,alignItems:'center'}}>
+            <div style={{width:3,height:36,borderRadius:2,background:conflict?'var(--err)':'var(--green)',flexShrink:0}}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:500,color:'var(--t1)'}}>{label}</div>
+            </div>
+            <span style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',
+              color:conflict?'var(--err)':'var(--green)',
+              background:conflict?'rgba(239,68,68,.1)':'rgba(34,197,94,.1)',
+              border:`1px solid ${conflict?'rgba(239,68,68,.25)':'rgba(34,197,94,.25)'}`,
+              padding:'2px 8px',borderRadius:2}}>{tag}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+        <Btn variant="secondary" small>Cancel</Btn>
+        <Btn variant="danger" small>Add Anyway</Btn>
+      </div>
+    </div>
+  </div>
+);
+
+const EmptyStatesDemo = () => (
+  <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',gap:1}}>
+    {/* Empty search */}
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',borderBottom:'1px solid var(--border)',padding:24}}>
+      <div style={{width:48,height:48,borderRadius:12,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:12}}>
+        <svg width="22" height="22" fill="none" stroke="var(--t3)" strokeWidth={1.5} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <div style={{fontSize:14,fontWeight:600,color:'var(--t2)',marginBottom:4}}>No courses found</div>
+      <div style={{fontSize:12,color:'var(--t3)',textAlign:'center'}}>Try a different search term or clear your filters</div>
+    </div>
+    {/* Empty schedule */}
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24}}>
+      <div style={{width:48,height:48,borderRadius:12,background:'var(--card)',border:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:12}}>
+        <svg width="22" height="22" fill="none" stroke="var(--t3)" strokeWidth={1.5} viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div style={{fontSize:14,fontWeight:600,color:'var(--t2)',marginBottom:4}}>No courses in your schedule</div>
+      <div style={{fontSize:12,color:'var(--t3)',textAlign:'center',marginBottom:14}}>Browse courses and add sections to build your schedule</div>
+      <Btn variant="primary" small>Browse Courses</Btn>
+    </div>
+  </div>
+);
+
+const LoadingDemo = () => (
+  <div style={{width:'100%',height:'100%',background:'var(--bg)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:32}}>
+    {/* Spinner */}
+    <div style={{textAlign:'center'}}>
+      <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:16}}>Loading Spinner</div>
+      <div style={{width:32,height:32,border:'2px solid var(--border)',borderTopColor:'var(--red)',borderRadius:'50%',animation:'spin 0.8s linear infinite',margin:'0 auto'}}/>
+    </div>
+    {/* Pagination */}
+    <div style={{textAlign:'center'}}>
+      <div style={{fontFamily:'var(--mono)',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:16}}>Pagination</div>
+      <div style={{display:'flex',gap:4,alignItems:'center'}}>
+        <button style={{padding:'6px 12px',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,color:'var(--t3)',fontSize:13,cursor:'pointer'}}>←</button>
+        {[1,2,3,'...',8].map((p,i)=>(
+          <button key={i} style={{padding:'6px 12px',borderRadius:6,fontSize:13,fontWeight:p===2?700:400,
+            background:p===2?'var(--red)':'var(--input)',color:p===2?'#fff':'var(--t2)',border:'1px solid var(--border)',cursor:'pointer',fontFamily:'var(--mono)'}}>{p}</button>
+        ))}
+        <button style={{padding:'6px 12px',background:'var(--input)',border:'1px solid var(--border)',borderRadius:6,color:'var(--t2)',fontSize:13,cursor:'pointer'}}>→</button>
+      </div>
+    </div>
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+);
+
+/* ── ROOT ───────────────────────────────────────────────── */
+function App() {
+  return (
+    <DesignCanvas title="CougarPlanner — More Screens">
+      <DCSection id="courses" title="Courses Browse">
+        <DCArtboard id="courses-desktop" label="Desktop — 1280×760" width={1280} height={760}>
+          <CoursesDesktop/>
+        </DCArtboard>
+        <DCArtboard id="courses-mobile" label="Mobile — 390×780" width={390} height={780}>
+          <CoursesMobile/>
+        </DCArtboard>
+      </DCSection>
+      <DCSection id="profdetail" title="Professor Detail">
+        <DCArtboard id="pd-desktop" label="Desktop — 1280×840" width={1280} height={840}>
+          <ProfDetailDesktop/>
+        </DCArtboard>
+        <DCArtboard id="pd-mobile" label="Mobile — 390×780" width={390} height={780}>
+          <ProfDetailMobile/>
+        </DCArtboard>
+      </DCSection>
+      <DCSection id="comps" title="Components">
+        <DCArtboard id="conflict-modal" label="Conflict Modal" width={600} height={380}>
+          <ConflictModalDemo/>
+        </DCArtboard>
+        <DCArtboard id="empty-states" label="Empty States" width={480} height={380}>
+          <EmptyStatesDemo/>
+        </DCArtboard>
+        <DCArtboard id="loading" label="Loading + Pagination" width={480} height={280}>
+          <LoadingDemo/>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
