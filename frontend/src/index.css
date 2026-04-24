@@ -2,21 +2,28 @@
 
 @theme {
   --color-c-red: #c8102e;
+  --color-c-red-hover: #a50e26;
+  --color-c-red-glow: rgba(200, 16, 46, 0.12);
   --color-bg-primary: #0f1117;
   --color-bg-card: #1a1d27;
   --color-bg-input: #252836;
+  --color-bg-hover: #2e3244;
   --color-border: #2e3244;
   --color-text-primary: #e8eaed;
   --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
   --color-rating-green: #22c55e;
   --color-rating-yellow: #eab308;
   --color-rating-red: #ef4444;
   --color-seats-green: #22c55e;
   --color-seats-yellow: #eab308;
   --color-seats-red: #ef4444;
+  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Space Mono', 'Fira Mono', monospace;
 }
 
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
+  font-family: var(--font-sans);
 }
