@@ -1,6 +1,6 @@
 # Cougar Planner — Session Handover
 
-**Date:** 2026-04-27  
+**Date:** 2026-04-27 (updated same session)  
 **Branch:** master (up to date with origin)
 
 ---
@@ -35,13 +35,22 @@ Firebase auth middleware is in `backend/app/utils/auth.py`. Conflict detection u
 - `frontend/src/contexts/AuthContext.jsx` — Firebase auth state, user sync on login, exposes `login`/`register`/`logout`/`user`
 - `frontend/src/main.jsx` — BrowserRouter + AuthProvider wiring
 - `frontend/src/App.jsx` — all 10 routes defined, Navbar included
-- `frontend/src/components/Navbar.jsx` — fully implemented (fixed top bar, auth-aware, mobile hamburger)
+- `frontend/src/components/Navbar.jsx` — fully implemented and polished this session (see Navbar notes below)
+- `frontend/src/assets/logo-icon-dark.svg` + `logo-lockup-dark.svg` — logo SVGs copied from `logo_handoff/assets/`
 - All API modules exist (`courses.js`, `professors.js`, `schedules.js`, `reviews.js`, `gradeDistributions.js`, `users.js`)
 - All utility functions exist (`formatTime.js`, `formatDay.js`, `ratingColor.js`, `seatsColor.js`, `constants.js`)
 - Both hooks exist (`useDebounce.js`, `usePagination.js`)
 
 **What's stubbed (returns null or "coming soon"):**
 Every page and component other than Navbar is a stub. No data-fetching pages are functional yet.
+
+### Navbar — What Was Done This Session
+
+Three improvements made to `frontend/src/components/Navbar.jsx`:
+
+1. **Logo** — brand area now shows the calendar icon SVG (inline JSX, always visible) + "CougarPlanner" wordmark (`font-mono font-bold text-lg`, hidden on mobile). SVG text was intentionally kept out of the inline SVG and rendered as HTML spans instead — SVG `<text>` elements conflict with Tailwind's cascading base styles and cause misalignment/sizing bugs.
+2. **Auth loading guard** — `loading` from `useAuth()` is now checked; both the desktop and mobile auth sections render `null` while Firebase resolves, preventing the "Log in / Sign up" flash on page load for returning users.
+3. **Mobile drawer animation** — replaced `{open && <div>}` conditional with an always-mounted div using `transition-[max-height] duration-300` between `max-h-0` and `max-h-96`. Required `overflow-hidden` on the outer div and a separate inner div holding padding so it clips cleanly at `max-h-0`.
 
 ---
 
