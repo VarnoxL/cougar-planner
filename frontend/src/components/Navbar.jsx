@@ -27,7 +27,7 @@ function NavItem({ to, label, onClick }) {
 }
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
+  const { user, loading, logout } = useAuth()
   const [open, setOpen] = useState(false)
 
   function close() {
@@ -39,9 +39,26 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
 
         {/* Brand */}
-        <Link to="/" className="flex items-center gap-1.5 shrink-0">
-          <span className="text-c-red font-bold text-lg leading-none">Cougar</span>
-          <span className="text-text-primary font-semibold text-lg leading-none">Planner</span>
+        <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Cougar Planner">
+          {/* Icon — shown at all sizes */}
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="4" y="9" width="32" height="26" rx="4" fill="#e8eaed" fillOpacity="0.07" stroke="#e8eaed" strokeOpacity="0.2" strokeWidth="1.5" />
+            <rect x="4" y="9" width="32" height="10" rx="4" fill="#c8102e" />
+            <rect x="4" y="15" width="32" height="4" fill="#c8102e" />
+            <rect x="13" y="5.5" width="2.5" height="7" rx="1.25" fill="#e8eaed" fillOpacity="0.5" />
+            <rect x="24.5" y="5.5" width="2.5" height="7" rx="1.25" fill="#e8eaed" fillOpacity="0.5" />
+            <line x1="4" y1="19" x2="36" y2="19" stroke="#e8eaed" strokeOpacity="0.15" strokeWidth="1" />
+            <circle cx="11" cy="27" r="3" fill="#e8eaed" fillOpacity="0.35" />
+            <circle cx="20" cy="27" r="3.5" fill="#c8102e" />
+            <circle cx="29" cy="27" r="3" fill="#e8eaed" fillOpacity="0.35" />
+            <path d="M11 27 Q15.5 23 20 27 Q24.5 31 29 27" stroke="#e8eaed" strokeOpacity="0.25" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            <circle cx="20" cy="27" r="5.5" stroke="#c8102e" strokeOpacity="0.3" strokeWidth="1" />
+          </svg>
+          {/* Wordmark — hidden on mobile */}
+          <span className="hidden md:flex items-baseline gap-0 font-mono font-bold text-lg tracking-tight leading-none">
+            <span className="text-text-primary">Cougar</span>
+            <span className="text-c-red">Planner</span>
+          </span>
         </Link>
 
         {/* Desktop nav */}
@@ -53,7 +70,7 @@ export default function Navbar() {
 
         {/* Desktop auth */}
         <div className="hidden md:flex items-center gap-3">
-          {user ? (
+          {loading ? null : user ? (
             <>
               <Link
                 to="/schedules"
@@ -102,14 +119,14 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="md:hidden border-t border-border bg-bg-card px-4 py-4 flex flex-col gap-4">
+      {/* Mobile drawer — always mounted, animated via max-height */}
+      <div className={`md:hidden border-t border-border bg-bg-card overflow-hidden transition-[max-height] duration-300 ease-in-out ${open ? 'max-h-96' : 'max-h-0'}`}>
+        <div className="px-4 py-4 flex flex-col gap-4">
           {navLinks.map((l) => (
             <NavItem key={l.to} to={l.to} label={l.label} onClick={close} />
           ))}
           <div className="border-t border-border pt-4 flex flex-col gap-3">
-            {user ? (
+            {loading ? null : user ? (
               <>
                 <Link
                   to="/schedules"
@@ -152,7 +169,7 @@ export default function Navbar() {
             )}
           </div>
         </div>
-      )}
+      </div>
     </header>
   )
 }
