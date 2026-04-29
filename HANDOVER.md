@@ -1,6 +1,6 @@
 # Cougar Planner — Session Handover
 
-**Date:** 2026-04-27 (updated same session)  
+**Date:** 2026-04-29  
 **Branch:** master (up to date with origin)
 
 ---
@@ -44,6 +44,21 @@ Firebase auth middleware is in `backend/app/utils/auth.py`. Conflict detection u
 **What's stubbed (returns null or "coming soon"):**
 Every page and component other than Navbar is a stub. No data-fetching pages are functional yet.
 
+### API Modules — Status
+
+All 6 API modules are now implemented:
+
+| Module | File | Functions |
+|---|---|---|
+| courses | `frontend/src/api/courses.js` | `fetchCourses`, `fetchCourse` |
+| professors | `frontend/src/api/professors.js` | `fetchProfessors`, `fetchProfessor` |
+| reviews | `frontend/src/api/reviews.js` | `fetchReviews`, `createReview`, `deleteReview` |
+| gradeDistributions | `frontend/src/api/gradeDistributions.js` | `fetchGradeDistributions`, `fetchGradeDistributionSummary` |
+| schedules | `frontend/src/api/schedules.js` | (stubbed — Phase 3) |
+| users | `frontend/src/api/users.js` | (stubbed — Phase 3) |
+
+All use the same pattern: `apiFetch` from `client.js`, query-string built via `URLSearchParams` filtering out null/empty values.
+
 ### Navbar — What Was Done This Session
 
 Three improvements made to `frontend/src/components/Navbar.jsx`:
@@ -60,12 +75,12 @@ The frontend plan lives at `.claude/frontend-plan.md`. The phases:
 
 **Phase 1** — Foundation (done, except the actual page/component implementations)
 
-**Phase 2 — Data Pages (start here)**
+**Phase 2 — Data Pages (in progress)**
 
 These are the next tasks to build, in order:
 
-1. `src/api/professors.js`, `reviews.js`, `gradeDistributions.js` — add missing fetch functions
-2. Display components: `RatingBadge`, `SeatsBadge`, `TimeDisplay`, `DayPills`, `ProfessorBadge`, `SectionRow`
+1. ~~`src/api/professors.js`, `reviews.js`, `gradeDistributions.js` — add missing fetch functions~~ **Done**
+2. Display components: `RatingBadge`, `SeatsBadge`, `TimeDisplay`, `DayPills`, `ProfessorBadge`, `SectionRow` **(start here)**
 3. `CoursesPage` — search bar, subject filter, paginated fetch, `CourseCard` list
 4. `CourseCard` — subject+number, name, credits, link to detail
 5. `CourseDetailPage` — course header, sections table, grade distribution
