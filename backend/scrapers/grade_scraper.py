@@ -1,3 +1,14 @@
+# IBHE Grade Distribution Scraper — parses public SIUE grade CSVs from the Illinois
+# Board of Higher Education Data Arena (https://www.ibhe.org/DataArena/main.html)
+#
+# Status: NOT YET IMPLEMENTED — functions are stubs pending IBHE URL/institution code research
+#
+# Scheduling (production — Render Cron Job, once implemented):
+#   Frequency : Once per semester after IBHE publishes updated CSVs (typically 2-3 months
+#               after semester end)
+#   Command   : PYTHONPATH=. python scrapers/grade_scraper.py <semester_code>
+#   Why       : Grade data is historical and changes only when IBHE releases new files.
+
 import csv
 import requests
 import sys

@@ -1,3 +1,11 @@
+# RateMyProfessors Scraper — fetches all SIUE professors from the RMP GraphQL API
+#
+# Scheduling (production — Render Cron Job):
+#   Frequency : Weekly (e.g. every Sunday at 3am)
+#   Command   : PYTHONPATH=. python scrapers/rmp_scraper.py
+#   Why       : Professor ratings change gradually as students submit reviews.
+#               Weekly keeps data reasonably fresh without hammering RMP.
+
 import sys
 import time
 import requests

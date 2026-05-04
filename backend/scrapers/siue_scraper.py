@@ -1,5 +1,12 @@
 # SIUE Course Catalog Scraper
 # See plan at .claude/plans/splendid-seeking-anchor.md for full implementation details
+#
+# Scheduling (production — Render Cron Job):
+#   Frequency : Once per semester, when Banner opens registration for the next term
+#               Typically: late October (Spring), late March (Summer/Fall)
+#   Command   : PYTHONPATH=. python scrapers/siue_scraper.py
+#   Why       : Banner auto-detects the latest open term, so no code changes needed
+#               between semesters — just re-run and the DB updates via upsert.
 
 import requests
 import sys
