@@ -7,11 +7,14 @@ professors_bp = Blueprint("professors", __name__)
 
 @professors_bp.route("/api/professors", methods=["GET"])
 def list_professors():
+    name = request.args.get("name")
     department = request.args.get("department")
     min_rating = request.args.get("min_rating", type=float)
 
     query = Professor.query
 
+    if name:
+        query = query.filter(Professor.name.ilike(f"%{name}%"))
     if department:
         query = query.filter(Professor.department.ilike(f"%{department}%"))
     if min_rating is not None:
