@@ -10,7 +10,9 @@
 
 **Differentiator from Coursicle:** SIUE-only (not generic multi-university), integrates RateMyProfessors ratings directly inline during schedule building, shows grade distributions aggregated from peer reviews, and provides server-side conflict detection.
 
-**Current state:** Backend is complete (19 endpoints, 6 blueprints, 9 models, Firebase auth middleware, conflict detection). Frontend is a bare Vite scaffold — `App.jsx` renders `<h1>Cougar Planner</h1>`, four placeholder files exist but are empty (`CourseCard.jsx`, `Navbar.jsx`, `LandingPage.jsx`, `courses.js`), and Tailwind CSS 4 is configured with a single custom color.
+**Current state (as of 2026-05-03):** Phase 1 and Phase 2.1–2.5 are complete. The app has full navigation, dark theme, Firebase auth context, all API modules, all utility functions, and all display components. CourseDetailPage and ProfessorsPage are fully functional with real data. **Next task: Phase 2.6 — ProfessorDetailPage.**
+
+All remaining Phase 2–4 pages exist as stubs (return a "coming soon" div). Backend is otherwise unchanged except for one addition: `GET /api/professors` now accepts a `name` param for case-insensitive name search (added alongside the existing `department` and `min_rating` params).
 
 ---
 
@@ -107,7 +109,7 @@ Response 200:
 
 ### 4.2 Professors (Public)
 
-**`GET /api/professors`** — params: `department`, `min_rating` (float), `page`, `per_page`
+**`GET /api/professors`** — params: `name` (string, ilike), `department` (string, ilike), `min_rating` (float), `page`, `per_page`
 Results: `{ id, name, department, rating, difficulty, num_ratings, would_take_again }`
 
 **`GET /api/professors/:id`**
@@ -260,43 +262,55 @@ frontend/src/
 
 ## 6. Build Phases
 
-### Phase 1: Foundation (Week 1)
+### Phase 1: Foundation ✅ COMPLETE
 
 Goal: Go from empty scaffold to a working page that fetches real data.
 
 | # | Task | Files |
 |---|---|---|
-| 1.1 | Install `react-router-dom` and `firebase` | `package.json` |
-| 1.2 | Add Vite dev proxy: `/api` → `http://localhost:5000` | `vite.config.js` |
-| 1.3 | Expand `@theme` with full dark color palette + body base styles | `src/index.css` |
-| 1.4 | Build API client wrapper (`apiFetch` with auth header injection) | `src/api/client.js` |
-| 1.5 | Implement courses API module | `src/api/courses.js` |
-| 1.6 | Build utility functions: `formatTime`, `formatDay`, `ratingColor`, `seatsColor`, `constants` | `src/utils/*.js` |
-| 1.7 | Build Firebase AuthContext (init app, `onAuthStateChanged`, user sync via `POST /api/users`, expose `login`/`register`/`logout`) | `src/contexts/AuthContext.jsx` |
-| 1.8 | Set up React Router in `main.jsx` + `App.jsx` with all route definitions. Wrap in `AuthProvider`. | `src/main.jsx`, `src/App.jsx` |
-| 1.9 | Build Navbar (fixed top, nav links, mobile hamburger, auth-aware right section) | `src/components/Navbar.jsx` |
-| 1.10 | Build shared components: `SearchInput`, `useDebounce`, `Pagination`, `LoadingSpinner`, `EmptyState` | `src/components/*.jsx`, `src/hooks/*.js` |
-| 1.11 | Build CoursesPage (search bar, subject filter, paginated fetch, loading/empty states) | `src/pages/CoursesPage.jsx` |
-| 1.12 | Build CourseCard (subject+number, name, credits, link to detail) | `src/components/CourseCard.jsx` |
+| ✅ 1.1 | Install `react-router-dom` and `firebase` | `package.json` |
+| ✅ 1.2 | Add Vite dev proxy: `/api` → `http://localhost:5000` | `vite.config.js` |
+| ✅ 1.3 | Expand `@theme` with full dark color palette + body base styles | `src/index.css` |
+| ✅ 1.4 | Build API client wrapper (`apiFetch` with auth header injection) | `src/api/client.js` |
+| ✅ 1.5 | Implement courses API module | `src/api/courses.js` |
+| ✅ 1.6 | Build utility functions: `formatTime`, `formatDay`, `ratingColor`, `seatsColor`, `constants` | `src/utils/*.js` |
+| ✅ 1.7 | Build Firebase AuthContext (init app, `onAuthStateChanged`, user sync via `POST /api/users`, expose `login`/`register`/`logout`) | `src/contexts/AuthContext.jsx` |
+| ✅ 1.8 | Set up React Router in `main.jsx` + `App.jsx` with all route definitions. Wrap in `AuthProvider`. | `src/main.jsx`, `src/App.jsx` |
+| ✅ 1.9 | Build Navbar (fixed top, nav links, mobile hamburger, auth-aware right section) | `src/components/Navbar.jsx` |
+| ✅ 1.10 | Build shared components: `SearchInput`, `useDebounce`, `Pagination`, `LoadingSpinner`, `EmptyState` | `src/components/*.jsx`, `src/hooks/*.js` |
+| ⏭️ 1.11 | CoursesPage — still a stub. Will be built after Phase 2 pages since the pattern is now established. | `src/pages/CoursesPage.jsx` |
+| ⏭️ 1.12 | CourseCard — still a stub. Needed for CoursesPage. | `src/components/CourseCard.jsx` |
 
-**Deliverable:** Working app with navigation, dark theme, courses search pulling real data. Auth context ready but no login UI yet.
+**Notes:**
+- `SearchInput` and `Pagination` were built as part of Phase 2.5 (ProfessorsPage) since that was the first page to need them.
+- CoursesPage and CourseCard are still stubs — build them after Phase 2 is complete, following the same pattern as ProfessorsPage.
 
-### Phase 2: Data Pages (Week 2)
+### Phase 2: Data Pages — IN PROGRESS
 
 Goal: All public-facing data pages functional with professor ratings, reviews, and grade distributions.
 
 | # | Task | Files |
 |---|---|---|
-| 2.1 | Build API modules for professors, reviews, grade distributions | `src/api/professors.js`, `reviews.js`, `gradeDistributions.js` |
-| 2.2 | Build display components: `RatingBadge`, `SeatsBadge`, `TimeDisplay`, `DayPills`, `ProfessorBadge`, `SectionRow` | `src/components/*.jsx` |
-| 2.3 | Build CourseDetailPage (course header, sections table as SectionRows, grade dist summary + `GradeDistChart`) | `src/pages/CourseDetailPage.jsx` |
-| 2.4 | Build GradeDistChart (horizontal stacked bar with pure divs — A green, B blue-green, C yellow, D orange, F red, W gray) | `src/components/GradeDistChart.jsx` |
-| 2.5 | Build ProfessorsPage (search, min-rating filter, paginated card grid) | `src/pages/ProfessorsPage.jsx` |
-| 2.6 | Build ProfessorDetailPage (stats header, RMP link, courses taught, grade dist, reviews list) | `src/pages/ProfessorDetailPage.jsx` |
+| ✅ 2.1 | Build API modules for professors, reviews, grade distributions | `src/api/professors.js`, `reviews.js`, `gradeDistributions.js` |
+| ✅ 2.2 | Build display components: `RatingBadge`, `SeatsBadge`, `TimeDisplay`, `DayPills`, `ProfessorBadge`, `SectionRow` | `src/components/*.jsx` |
+| ✅ 2.3 | Build CourseDetailPage (course header, sections table as SectionRows, grade dist summary + `GradeDistChart`) | `src/pages/CourseDetailPage.jsx` |
+| ✅ 2.4 | Build GradeDistChart (horizontal stacked bar with pure divs — A green, B blue-green, C yellow, D orange, F red, W gray) | `src/components/GradeDistChart.jsx` |
+| ✅ 2.5 | Build ProfessorsPage (search by name, min-rating filter, paginated card grid) | `src/pages/ProfessorsPage.jsx` |
+| ⬅️ **2.6** | **NEXT — Build ProfessorDetailPage (stats header, RMP link, courses taught, grade dist, reviews list)** | `src/pages/ProfessorDetailPage.jsx` |
 | 2.7 | Build ReviewCard (rating, difficulty, grade, comment, author, delete button for own reviews) | `src/components/ReviewCard.jsx` |
 | 2.8 | Build ReviewForm (modal — rating 1-5, difficulty 1-5, grade dropdown, comment, semester) | `src/components/ReviewForm.jsx` |
 
-**Deliverable:** Course detail with sections and grades, professor pages with reviews, working review form.
+**Patterns established — follow these for remaining pages:**
+- Fetch-on-mount: `useEffect` with `let cancelled = false` cleanup flag, `Promise.all` for parallel fetches
+- Loading/error guards: `if (loading) return <LoadingSpinner />` then `if (error) return <EmptyState message={error} />`
+- Search+paginate: `useDebounce(search, 300)` + `usePagination(1)` + separate reset effect on `[debouncedSearch, filter]`
+- Internal card components are fine in the same file (e.g. `ProfessorCard` inside `ProfessorsPage.jsx`)
+- No `onAdd`/`onRemove` on `SectionRow` outside of ScheduleBuilderPage
+
+**ReviewCard and ReviewForm notes for 2.7/2.8:**
+- `ReviewCard` is needed by `ProfessorDetailPage` (2.6) — build it first or alongside
+- `ReviewForm` is a modal; auth is required to submit — guard the "Write a Review" button with `useAuth()`, show login prompt if not authenticated
+- `ReviewForm` stub already exists at `src/components/ReviewForm.jsx`
 
 ### Phase 3: Schedule Builder (Weeks 3–4)
 
@@ -351,7 +365,7 @@ Goal: Auth UI, profile, landing page, responsive pass, error handling, productio
 ## 8. Rules for Claude
 
 1. **Tutor mode is active** (per CLAUDE.md). Guide, don't generate. Give hints first. If the user says "override," provide direct code.
-2. **No backend changes.** Do not modify any file in `backend/`.
+2. **Minimize backend changes.** Frontend-only by default. The one exception so far: added `name` ilike filter to `GET /api/professors` (committed). Any future backend changes need a clear reason.
 3. **No new packages** beyond `react-router-dom` and `firebase`. No axios, no Redux, no UI libraries, no charting libraries.
 4. **Plain JSX only.** No TypeScript. No class components. Function components + hooks only.
 5. **Handle nullable professor everywhere.** `section.professor` can be `null`. Use optional chaining or display "TBA".

@@ -1,13 +1,3 @@
-# Tutor Mode
-   - Act as a tutor, not a code generator
-   - When I make changes, point out issues but guide me to the fix — don't just give me the answer
-   - Explain *why* something is wrong, not just what to change
-   - If I ask for help, give hints first
-   - If I say override, override tutor mode
-   
-
----
-
 # Project Overview
 Cougar Planner is a course planning tool for SIUE (Southern Illinois University Edwardsville) students only. It aggregates course schedule data from SIUE's Banner 9 system and professor ratings from RateMyProfessors, letting students search courses, view instructor quality metrics, and build semester schedules. Do not generalize this tool to other universities or audiences.
 

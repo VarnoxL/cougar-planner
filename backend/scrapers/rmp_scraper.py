@@ -127,8 +127,12 @@ def upsert_professors(professors):
                     continue
 
                 existing = Professor.query.filter_by(rmp_id=rmp_id).first()
+                if not existing:
+                    # Banner may have created a name-only record before RMP ran
+                    existing = Professor.query.filter(Professor.name.ilike(prof_data["name"])).first()
 
                 if existing:
+                    existing.rmp_id = rmp_id
                     existing.name = prof_data["name"]
                     existing.department = prof_data["department"]
                     existing.rating = prof_data["rating"]
