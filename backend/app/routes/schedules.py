@@ -16,7 +16,7 @@ schedules_bp = Blueprint("schedules", __name__)
 def list_schedules():
     user_id = request.args.get("user_id")
     if not user_id:
-        return jsonify({"error" : "user_id is required"}), 400
+        return jsonify({"error": "user_id is required"}), 400
     User.query.get_or_404(user_id)
 
     page = request.args.get("page", 1, type=int)
@@ -120,7 +120,6 @@ def get_schedule(schedule_id):
                 "number": section.course.number,
                 "name": section.course.name,
             },
-            
             "professor": professor,
             "schedules": [
                 {
@@ -139,12 +138,6 @@ def get_schedule(schedule_id):
         "created_at": current_schedule.created_at.isoformat() if current_schedule.created_at else None,
         "sections": section_list,
     })
-
-
-
-
-
-    
 
 
 # PATCH /api/schedules/<schedule_id>
@@ -173,8 +166,8 @@ def update_schedule(schedule_id):
         "created_at": new_schedule.created_at.isoformat() if new_schedule.created_at else None,
         "section_count": len(new_schedule.saved_schedule_sections),
     }), 200
-    
-    
+
+
 # DELETE /api/schedules/<schedule_id>
 # - No cascade is defined on the model, so manually delete child rows first:
 #     SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id).delete()
@@ -189,9 +182,7 @@ def delete_schedule(schedule_id):
     SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id).delete()
     db.session.delete(schedule)
     db.session.commit()
-    return jsonify ({ "message": "Schedule deleted" }), 200
-
-
+    return jsonify({"message": "Schedule deleted"}), 200
 
 
 # POST /api/schedules/<schedule_id>/sections
@@ -210,7 +201,7 @@ def add_section(schedule_id):
         return jsonify({"error": "section_id missing"}), 400
     section_id = data.get("section_id")
     if not section_id:
-        return jsonify({"error": "value is none"}), 400
+        return jsonify({"error": "section_id is required"}), 400
     schedule = SavedSchedule.query.get_or_404(schedule_id)
     if g.decoded_token.get("uid") != schedule.user.firebase_uid:
         return jsonify({"error": "permission denied"}), 403
@@ -218,9 +209,9 @@ def add_section(schedule_id):
     duplicate = SavedScheduleSection.query.filter_by(saved_schedule_id=schedule_id, section_id=section_id).first()
     if duplicate:
         return jsonify({"error": "duplicate found"}), 409
-    conflicts = get_conflicts(schedule_id,section_id)
+    conflicts = get_conflicts(schedule_id, section_id)
     if conflicts:
-        return jsonify({"error": "time conflict found", "conflicts": conflicts }), 409
+        return jsonify({"error": "time conflict found", "conflicts": conflicts}), 409
     new_section = SavedScheduleSection(saved_schedule_id=schedule_id, section_id=section_id)
     db.session.add(new_section)
     db.session.commit()
@@ -228,8 +219,6 @@ def add_section(schedule_id):
         "schedule_id": new_section.saved_schedule_id,
         "section_id": new_section.section_id
     }), 201
-
-
 
 
 # DELETE /api/schedules/<schedule_id>/sections/<section_id>
@@ -248,4 +237,3 @@ def remove_section(schedule_id, section_id):
     db.session.delete(section)
     db.session.commit()
     return jsonify({"message": "Section removed"}), 200
-    

@@ -127,7 +127,7 @@ def create_review():
             "grade_received": review.grade_received,
             "comment": review.comment,
             "semester_taken": review.semester_taken,
-            "created_at":review.created_at.isoformat() if review.created_at else None,
+            "created_at": review.created_at.isoformat() if review.created_at else None,
         }), 201
 
 
