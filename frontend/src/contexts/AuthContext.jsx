@@ -26,12 +26,16 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [dbUser, setDbUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        await apiFetch('/api/users', { method: 'POST' }).catch(() => {})
+        const record = await apiFetch('/api/users', { method: 'POST' }).catch(() => null)
+        setDbUser(record ?? null)
+      } else {
+        setDbUser(null)
       }
       setUser(firebaseUser)
       setLoading(false)
@@ -52,7 +56,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, dbUser, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -5,6 +5,7 @@ import { fetchReviews, deleteReview } from '../api/reviews'
 import { fetchGradeDistributionSummary } from '../api/gradeDistributions'
 import { useAuth } from '../contexts/AuthContext'
 import ReviewCard from '../components/ReviewCard'
+import ReviewForm from '../components/ReviewForm'
 import GradeDistChart from '../components/GradeDistChart'
 import RatingBadge from '../components/RatingBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -19,7 +20,7 @@ function getInitials(name) {
 
 export default function ProfessorDetailPage() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, dbUser } = useAuth()
 
   const [professor, setProfessor] = useState(null)
   const [reviews, setReviews] = useState([])
@@ -27,6 +28,7 @@ export default function ProfessorDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('Info')
+  const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -102,7 +104,7 @@ export default function ProfessorDetailPage() {
 
   const reviewsList = (
     <div className="bg-bg-card border border-border rounded-lg px-4">
-      <div className="py-3 border-b border-border">
+      <div className="py-3 border-b border-border flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-text-muted">
           Student Reviews
           {reviews.length > 0 && (
@@ -111,6 +113,21 @@ export default function ProfessorDetailPage() {
             </span>
           )}
         </h2>
+        {user ? (
+          <button
+            onClick={() => setShowForm(true)}
+            className="text-[11px] font-semibold bg-c-red text-white px-3 py-1 rounded-lg hover:bg-c-red-hover transition-colors"
+          >
+            Write a Review
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            className="text-[11px] text-text-muted hover:text-text-secondary transition-colors"
+          >
+            Sign in to review
+          </Link>
+        )}
       </div>
       {reviews.length === 0 ? (
         <div className="py-6">
@@ -228,6 +245,20 @@ export default function ProfessorDetailPage() {
         </div>
         {reviewsList}
       </div>
+
+      {showForm && dbUser && (
+        <ReviewForm
+          professorId={Number(id)}
+          courses={professor.courses}
+          dbUserId={dbUser.id}
+          onClose={() => setShowForm(false)}
+          onSuccess={(r) => {
+            setReviews((prev) => [r, ...prev])
+            setShowForm(false)
+            setActiveTab('Reviews')
+          }}
+        />
+      )}
 
     </div>
   )
