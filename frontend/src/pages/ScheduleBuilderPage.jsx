@@ -74,7 +74,12 @@ export default function ScheduleBuilderPage() {
     }
     let cancelled = false
     setSearching(true)
-    fetchCourses({ search: debouncedQuery.trim(), per_page: 10 })
+    const q = debouncedQuery.trim()
+    // Short all-letter queries (e.g. "CS", "MATH") are subject codes — use exact subject match
+    // to avoid false positives from names ending in "-ics" (Statistics, Economics, etc.)
+    const isSubjectCode = /^[a-zA-Z]{1,5}$/.test(q)
+    const params = isSubjectCode ? { subject: q, per_page: 10 } : { search: q, per_page: 10 }
+    fetchCourses(params)
       .then(data => {
         if (!cancelled) {
           setSearchResults(data.results ?? [])
