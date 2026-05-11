@@ -18,7 +18,7 @@ def create_app(config_overrides=None):
         app.config.update(config_overrides)
 
     db.init_app(app)
-    CORS(app)
+    CORS(app, origins=app.config["CORS_ORIGINS"])
     service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT_JSON')
     if service_account and not firebase_admin._apps:
         cred = credentials.Certificate(json.loads(service_account))
