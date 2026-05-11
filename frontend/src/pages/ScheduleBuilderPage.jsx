@@ -188,7 +188,7 @@ export default function ScheduleBuilderPage() {
   const addedSectionIds = new Set(schedule.sections.map(s => s.id))
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="max-w-screen-2xl mx-auto px-2 py-6">
       <div className="mb-4">
         <Link to="/schedules" className="text-xs text-text-muted hover:text-c-red transition-colors">
           ← My Schedules
@@ -197,7 +197,7 @@ export default function ScheduleBuilderPage() {
 
       <div className="flex flex-col md:flex-row gap-4">
         {/* ============ LEFT PANEL — Course Search ============ */}
-        <div className="md:w-1/2 bg-bg-card border border-border rounded-lg p-4">
+        <div className="md:w-1/3 shrink-0 bg-bg-card border border-border rounded-lg p-4">
           <h2 className="font-mono font-bold text-text-primary text-sm mb-3">Add Courses</h2>
 
           <SearchInput
@@ -279,7 +279,7 @@ export default function ScheduleBuilderPage() {
         </div>
 
         {/* ============ RIGHT PANEL — Schedule View ============ */}
-        <div className="md:w-1/2 flex flex-col gap-4">
+        <div className="flex-1 flex flex-col gap-4">
           {/* Header */}
           <div className="bg-bg-card border border-border rounded-lg p-4">
             <h1 className="font-mono font-bold text-text-primary text-base">{schedule.name}</h1>
