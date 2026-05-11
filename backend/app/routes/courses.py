@@ -17,7 +17,7 @@ def list_courses():
     if search:
         pattern = f"%{search}%"
         query = query.filter(
-            Course.name.ilike(pattern) | Course.number.ilike(pattern)
+            Course.subject.ilike(pattern) | Course.name.ilike(pattern) | Course.number.ilike(pattern)
         )
 
     page = request.args.get("page", 1, type=int)
