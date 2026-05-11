@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 const navLinks = [
   { to: '/courses', label: 'Courses' },
   { to: '/professors', label: 'Professors' },
+  { to: '/schedules', label: 'Schedules' },
 ]
 
 function NavItem({ to, label, onClick }) {
@@ -16,7 +17,7 @@ function NavItem({ to, label, onClick }) {
       className={({ isActive }) =>
         `text-sm font-medium transition-colors ${
           isActive
-            ? 'text-c-red'
+            ? 'text-c-red underline underline-offset-4 decoration-c-red/40'
             : 'text-text-secondary hover:text-text-primary'
         }`
       }
@@ -36,12 +37,12 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 border-b border-border bg-bg-primary">
-      <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
+      <div className="mx-auto max-w-screen-2xl px-4 h-14 flex items-center justify-between">
 
         {/* Brand */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Cougar Planner">
-          {/* Icon — shown at all sizes */}
-          <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Icon */}
+          <svg width="26" height="26" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <rect x="4" y="9" width="32" height="26" rx="4" fill="#e8eaed" fillOpacity="0.07" stroke="#e8eaed" strokeOpacity="0.2" strokeWidth="1.5" />
             <rect x="4" y="9" width="32" height="10" rx="4" fill="#c8102e" />
             <rect x="4" y="15" width="32" height="4" fill="#c8102e" />
@@ -55,14 +56,11 @@ export default function Navbar() {
             <circle cx="20" cy="27" r="5.5" stroke="#c8102e" strokeOpacity="0.3" strokeWidth="1" />
           </svg>
           {/* Wordmark — hidden on mobile */}
-          <span className="hidden md:flex items-baseline gap-0 font-mono font-bold text-lg tracking-tight leading-none">
-            <span className="text-text-primary">Cougar</span>
-            <span className="text-c-red">Planner</span>
-          </span>
+          <span className="hidden md:inline font-mono font-bold text-lg tracking-tight"><span className="text-text-primary">Cougar</span><span className="text-c-red">Planner</span></span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-7">
           {navLinks.map((l) => (
             <NavItem key={l.to} to={l.to} label={l.label} />
           ))}
@@ -73,14 +71,8 @@ export default function Navbar() {
           {loading ? null : user ? (
             <>
               <Link
-                to="/schedules"
-                className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-              >
-                My Schedules
-              </Link>
-              <Link
                 to="/profile"
-                className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                className="text-sm text-text-secondary hover:text-text-primary transition-colors truncate max-w-[140px]"
               >
                 {user.displayName || user.email}
               </Link>
@@ -101,7 +93,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/register"
-                className="text-sm px-3 py-1.5 rounded bg-c-red hover:bg-c-red-hover text-white font-medium transition-colors"
+                className="text-sm px-3 py-1.5 rounded bg-c-red hover:opacity-90 text-white font-medium transition-opacity"
               >
                 Sign up
               </Link>
@@ -119,7 +111,7 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile drawer — always mounted, animated via max-height */}
+      {/* Mobile drawer */}
       <div className={`md:hidden border-t border-border bg-bg-card overflow-hidden transition-[max-height] duration-300 ease-in-out ${open ? 'max-h-96' : 'max-h-0'}`}>
         <div className="px-4 py-4 flex flex-col gap-4">
           {navLinks.map((l) => (
@@ -129,16 +121,9 @@ export default function Navbar() {
             {loading ? null : user ? (
               <>
                 <Link
-                  to="/schedules"
-                  onClick={close}
-                  className="text-sm text-text-secondary hover:text-text-primary"
-                >
-                  My Schedules
-                </Link>
-                <Link
                   to="/profile"
                   onClick={close}
-                  className="text-sm text-text-secondary hover:text-text-primary"
+                  className="text-sm text-text-secondary hover:text-text-primary truncate"
                 >
                   {user.displayName || user.email}
                 </Link>
