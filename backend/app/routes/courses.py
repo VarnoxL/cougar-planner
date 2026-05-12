@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from sqlalchemy import case
 from sqlalchemy.orm import joinedload
 from ..models import Course, Section, Professor, Schedule
 
@@ -15,9 +16,18 @@ def list_courses():
     if subject:
         query = query.filter(Course.subject.ilike(subject))
     if search:
-        pattern = f"%{search}%"
         query = query.filter(
-            Course.subject.ilike(pattern) | Course.name.ilike(pattern) | Course.number.ilike(pattern)
+            Course.subject.ilike(f"{search}%") |
+            Course.name.ilike(f"%{search}%") |
+            Course.number.ilike(f"%{search}%")
+        )
+        query = query.order_by(
+            case(
+                (Course.subject.ilike(f"{search}%"), 0),
+                else_=1
+            ),
+            Course.subject,
+            Course.number,
         )
 
     page = request.args.get("page", 1, type=int)
