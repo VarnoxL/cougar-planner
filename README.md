@@ -1,8 +1,8 @@
-﻿# Cougar Planner
+# Cougar Planner
 
 **Live site: [cougarplanner.com](https://cougarplanner.com)**
 
-A course planning tool for SIUE (Southern Illinois University Edwardsville) students. Search courses, view professor ratings from RateMyProfessors, check seat availability, and plan your schedule â€” all in one place.
+A course planning tool for SIUE (Southern Illinois University Edwardsville) students. Search courses, view professor ratings from RateMyProfessors, check seat availability, and plan your schedule — all in one place.
 
 ---
 
@@ -33,84 +33,84 @@ A course planning tool for SIUE (Southern Illinois University Edwardsville) stud
 
 ```
 cougar-planner/
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ app/
-â”‚   â”‚   â”œâ”€â”€ __init__.py             # Flask app factory + blueprint registration
-â”‚   â”‚   â”œâ”€â”€ config.py               # DB config via .env
-â”‚   â”‚   â”œâ”€â”€ models.py               # SQLAlchemy models
-â”‚   â”‚   â”œâ”€â”€ routes/
-â”‚   â”‚   â”‚   â”œâ”€â”€ courses.py          # /api/courses
-â”‚   â”‚   â”‚   â”œâ”€â”€ professors.py       # /api/professors
-â”‚   â”‚   â”‚   â”œâ”€â”€ schedules.py        # /api/schedules
-â”‚   â”‚   â”‚   â”œâ”€â”€ reviews.py          # /api/reviews
-â”‚   â”‚   â”‚   â”œâ”€â”€ users.py            # /api/users
-â”‚   â”‚   â”‚   â””â”€â”€ grade_distributions.py  # /api/grade-distributions
-â”‚   â”‚   â””â”€â”€ utils/
-â”‚   â”‚       â”œâ”€â”€ conflict.py         # Time conflict detection for schedule builder
-â”‚   â”‚       â””â”€â”€ auth.py             # Firebase token verification middleware
-â”‚   â”œâ”€â”€ scrapers/
-â”‚   â”‚   â”œâ”€â”€ rmp_scraper.py          # Scrapes RateMyProfessors (1,559 SIUE professors)
-â”‚   â”‚   â”œâ”€â”€ siue_scraper.py         # Scrapes SIUE Banner 9 API (course catalog)
-â”‚   â”‚   â””â”€â”€ grade_scraper.py        # Scrapes IBHE grade distribution CSVs
-â”‚   â”œâ”€â”€ requirements.txt
-â”‚   â””â”€â”€ run.py
-â””â”€â”€ frontend/
-    â”œâ”€â”€ src/
-    â”‚   â”œâ”€â”€ api/                    # fetch wrappers for each backend resource
-    â”‚   â”‚   â”œâ”€â”€ client.js           # Base fetch client with auth header injection
-    â”‚   â”‚   â”œâ”€â”€ courses.js
-    â”‚   â”‚   â”œâ”€â”€ professors.js
-    â”‚   â”‚   â”œâ”€â”€ schedules.js
-    â”‚   â”‚   â”œâ”€â”€ reviews.js
-    â”‚   â”‚   â”œâ”€â”€ gradeDistributions.js
-    â”‚   â”‚   â””â”€â”€ users.js
-    â”‚   â”œâ”€â”€ components/             # Shared UI components
-    â”‚   â”‚   â”œâ”€â”€ ConflictModal.jsx
-    â”‚   â”‚   â”œâ”€â”€ CourseCard.jsx
-    â”‚   â”‚   â”œâ”€â”€ DayPills.jsx
-    â”‚   â”‚   â”œâ”€â”€ EmptyState.jsx
-    â”‚   â”‚   â”œâ”€â”€ GradeDistChart.jsx
-    â”‚   â”‚   â”œâ”€â”€ LoadingSpinner.jsx
-    â”‚   â”‚   â”œâ”€â”€ Navbar.jsx
-    â”‚   â”‚   â”œâ”€â”€ Pagination.jsx
-    â”‚   â”‚   â”œâ”€â”€ ProfessorBadge.jsx
-    â”‚   â”‚   â”œâ”€â”€ ProtectedRoute.jsx
-    â”‚   â”‚   â”œâ”€â”€ RatingBadge.jsx
-    â”‚   â”‚   â”œâ”€â”€ ReviewCard.jsx
-    â”‚   â”‚   â”œâ”€â”€ ReviewForm.jsx
-    â”‚   â”‚   â”œâ”€â”€ SearchInput.jsx
-    â”‚   â”‚   â”œâ”€â”€ SeatsBadge.jsx
-    â”‚   â”‚   â”œâ”€â”€ SectionRow.jsx
-    â”‚   â”‚   â”œâ”€â”€ TimeDisplay.jsx
-    â”‚   â”‚   â””â”€â”€ WeeklyCalendar.jsx
-    â”‚   â”œâ”€â”€ contexts/
-    â”‚   â”‚   â””â”€â”€ AuthContext.jsx     # Firebase auth state (current user, loading)
-    â”‚   â”œâ”€â”€ hooks/
-    â”‚   â”‚   â”œâ”€â”€ useDebounce.js
-    â”‚   â”‚   â””â”€â”€ usePagination.js
-    â”‚   â”œâ”€â”€ pages/
-    â”‚   â”‚   â”œâ”€â”€ LandingPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ LoginPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ RegisterPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ CoursesPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ CourseDetailPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ ProfessorsPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ ProfessorDetailPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ ScheduleBuilderPage.jsx
-    â”‚   â”‚   â”œâ”€â”€ MySchedulesPage.jsx
-    â”‚   â”‚   â””â”€â”€ ProfilePage.jsx
-    â”‚   â”œâ”€â”€ utils/
-    â”‚   â”‚   â”œâ”€â”€ constants.js
-    â”‚   â”‚   â”œâ”€â”€ formatDay.js
-    â”‚   â”‚   â”œâ”€â”€ formatTime.js
-    â”‚   â”‚   â”œâ”€â”€ ratingColor.js
-    â”‚   â”‚   â””â”€â”€ seatsColor.js
-    â”‚   â”œâ”€â”€ App.jsx                 # Root component with React Router routes
-    â”‚   â”œâ”€â”€ main.jsx                # Entry point â€” mounts React app to DOM
-    â”‚   â””â”€â”€ index.css               # Global styles + Tailwind CSS import
-    â”œâ”€â”€ index.html
-    â”œâ”€â”€ vite.config.js
-    â””â”€â”€ package.json
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py             # Flask app factory + blueprint registration
+│   │   ├── config.py               # DB config via .env
+│   │   ├── models.py               # SQLAlchemy models
+│   │   ├── routes/
+│   │   │   ├── courses.py          # /api/courses
+│   │   │   ├── professors.py       # /api/professors
+│   │   │   ├── schedules.py        # /api/schedules
+│   │   │   ├── reviews.py          # /api/reviews
+│   │   │   ├── users.py            # /api/users
+│   │   │   └── grade_distributions.py  # /api/grade-distributions
+│   │   └── utils/
+│   │       ├── conflict.py         # Time conflict detection for schedule builder
+│   │       └── auth.py             # Firebase token verification middleware
+│   ├── scrapers/
+│   │   ├── rmp_scraper.py          # Scrapes RateMyProfessors (1,559 SIUE professors)
+│   │   ├── siue_scraper.py         # Scrapes SIUE Banner 9 API (course catalog)
+│   │   └── grade_scraper.py        # Scrapes IBHE grade distribution CSVs
+│   ├── requirements.txt
+│   └── run.py
+└── frontend/
+    ├── src/
+    │   ├── api/                    # fetch wrappers for each backend resource
+    │   │   ├── client.js           # Base fetch client with auth header injection
+    │   │   ├── courses.js
+    │   │   ├── professors.js
+    │   │   ├── schedules.js
+    │   │   ├── reviews.js
+    │   │   ├── gradeDistributions.js
+    │   │   └── users.js
+    │   ├── components/             # Shared UI components
+    │   │   ├── ConflictModal.jsx
+    │   │   ├── CourseCard.jsx
+    │   │   ├── DayPills.jsx
+    │   │   ├── EmptyState.jsx
+    │   │   ├── GradeDistChart.jsx
+    │   │   ├── LoadingSpinner.jsx
+    │   │   ├── Navbar.jsx
+    │   │   ├── Pagination.jsx
+    │   │   ├── ProfessorBadge.jsx
+    │   │   ├── ProtectedRoute.jsx
+    │   │   ├── RatingBadge.jsx
+    │   │   ├── ReviewCard.jsx
+    │   │   ├── ReviewForm.jsx
+    │   │   ├── SearchInput.jsx
+    │   │   ├── SeatsBadge.jsx
+    │   │   ├── SectionRow.jsx
+    │   │   ├── TimeDisplay.jsx
+    │   │   └── WeeklyCalendar.jsx
+    │   ├── contexts/
+    │   │   └── AuthContext.jsx     # Firebase auth state (current user, loading)
+    │   ├── hooks/
+    │   │   ├── useDebounce.js
+    │   │   └── usePagination.js
+    │   ├── pages/
+    │   │   ├── LandingPage.jsx
+    │   │   ├── LoginPage.jsx
+    │   │   ├── RegisterPage.jsx
+    │   │   ├── CoursesPage.jsx
+    │   │   ├── CourseDetailPage.jsx
+    │   │   ├── ProfessorsPage.jsx
+    │   │   ├── ProfessorDetailPage.jsx
+    │   │   ├── ScheduleBuilderPage.jsx
+    │   │   ├── MySchedulesPage.jsx
+    │   │   └── ProfilePage.jsx
+    │   ├── utils/
+    │   │   ├── constants.js
+    │   │   ├── formatDay.js
+    │   │   ├── formatTime.js
+    │   │   ├── ratingColor.js
+    │   │   └── seatsColor.js
+    │   ├── App.jsx                 # Root component with React Router routes
+    │   ├── main.jsx                # Entry point — mounts React app to DOM
+    │   └── index.css               # Global styles + Tailwind CSS import
+    ├── index.html
+    ├── vite.config.js
+    └── package.json
 ```
 
 ---
@@ -224,12 +224,12 @@ The frontend will be available at `http://localhost:5173` and proxies API calls 
 
 ## Data Models
 
-- **Professor** â€” name, department, RMP rating, difficulty, would-take-again %
-- **Course** â€” subject, number, name, credits, description
-- **Section** â€” CRN, section number, semester, capacity, enrollment, delivery method
-- **Schedule** â€” day, start/end time, location (one row per meeting day)
-- **User** â€” Firebase UID, email, display name, major
-- **SavedSchedule** â€” user's saved course selections
-- **Review** â€” user review of a professor for a specific course (rating, difficulty, grade received)
-- **GradeDistribution** â€” A/B/C/D/F/W counts per professor per course per semester
-- **SavedScheduleSection** â€” junction table linking SavedSchedule to Section
+- **Professor** — name, department, RMP rating, difficulty, would-take-again %
+- **Course** — subject, number, name, credits, description
+- **Section** — CRN, section number, semester, capacity, enrollment, delivery method
+- **Schedule** — day, start/end time, location (one row per meeting day)
+- **User** — Firebase UID, email, display name, major
+- **SavedSchedule** — user's saved course selections
+- **Review** — user review of a professor for a specific course (rating, difficulty, grade received)
+- **GradeDistribution** — A/B/C/D/F/W counts per professor per course per semester
+- **SavedScheduleSection** — junction table linking SavedSchedule to Section
