@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { fetchCourses, fetchCourse } from '../api/courses'
 import { useDebounce } from '../hooks/useDebounce'
 import { SEMESTER_OPTIONS } from '../utils/constants'
@@ -12,6 +13,10 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 
 export default function GuestScheduleBuilderPage() {
+  const { user, loading } = useAuth()
+
+  if (!loading && user) return <Navigate to="/schedules" replace />
+
   const [semester, setSemester] = useState(SEMESTER_OPTIONS[0].value)
   const [sections, setSections] = useState([])
 

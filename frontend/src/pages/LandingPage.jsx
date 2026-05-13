@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const AC = '#c8102e'
 
@@ -170,6 +171,8 @@ function Stat({ val, label }) {
 
 export default function LandingPage() {
   useReveal()
+  const { user } = useAuth()
+  const startDest = user ? '/schedules' : '/schedules/guest'
 
   return (
     <>
@@ -215,7 +218,7 @@ export default function LandingPage() {
           </p>
 
           <div className="lp-a4" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <PrimaryBtn to="/schedules/guest">Get Started — Free <IconArrow /></PrimaryBtn>
+            <PrimaryBtn to={startDest}>Get Started — Free <IconArrow /></PrimaryBtn>
             <SecondaryBtn to="/courses">Browse Courses</SecondaryBtn>
           </div>
 
@@ -286,7 +289,7 @@ export default function LandingPage() {
           <p style={{ fontSize: 16, color: '#9ca3af', marginBottom: 36 }}>
             Join SIUE students who use CougarPlanner every registration season.
           </p>
-          <PrimaryBtn to="/schedules/guest" size="lg">Get Started — Free <IconArrow /></PrimaryBtn>
+          <PrimaryBtn to={startDest} size="lg">Get Started — Free <IconArrow /></PrimaryBtn>
           <div style={{ marginTop: 20, fontSize: 13, color: '#6b7280' }}>Free for all SIUE students.</div>
         </div>
       </section>
