@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { fetchSchedule, addSection, removeSection } from '../api/schedules'
+import { fetchSchedules, fetchSchedule, addSection, removeSection, createSchedule, updateSchedule, deleteSchedule } from '../api/schedules'
 import { fetchCourses, fetchCourse } from '../api/courses'
 import { useDebounce } from '../hooks/useDebounce'
 import { SEMESTER_OPTIONS } from '../utils/constants'
@@ -16,6 +16,7 @@ export default function ScheduleBuilderPage() {
   const { id: scheduleIdParam } = useParams()
   const scheduleId = Number(scheduleIdParam)
   const { user, dbUser, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
 
   // --- Core schedule state ---
   const [schedule, setSchedule] = useState(null)
@@ -38,7 +39,20 @@ export default function ScheduleBuilderPage() {
   const [conflictData, setConflictData] = useState(null)
   const [duplicateFlashId, setDuplicateFlashId] = useState(null)
 
-  // --- Effect: load schedule on mount ---
+  // --- Switcher state ---
+  const [allSchedules, setAllSchedules] = useState([])
+  const [showSwitcher, setShowSwitcher] = useState(false)
+  const switcherRef = useRef(null)
+  const [showNewForm, setShowNewForm] = useState(false)
+  const [newSchName, setNewSchName] = useState('')
+  const [newSchSemester, setNewSchSemester] = useState(SEMESTER_OPTIONS[0].value)
+  const [creatingNew, setCreatingNew] = useState(false)
+  const [editingName, setEditingName] = useState('')
+  const [renaming, setRenaming] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  // --- Effect: load schedule ---
   useEffect(() => {
     if (!dbUser) return
     if (!Number.isFinite(scheduleId)) {
@@ -53,6 +67,7 @@ export default function ScheduleBuilderPage() {
       .then(data => {
         if (!cancelled) {
           setSchedule(data)
+          setEditingName(data.name)
           setPageLoading(false)
         }
       })
@@ -65,6 +80,34 @@ export default function ScheduleBuilderPage() {
     return () => { cancelled = true }
   }, [dbUser, scheduleId])
 
+  // --- Effect: reset switcher UI when schedule changes ---
+  useEffect(() => {
+    setShowSwitcher(false)
+    setShowNewForm(false)
+    setConfirmDelete(false)
+  }, [scheduleId])
+
+  // --- Effect: load all schedules for switcher ---
+  useEffect(() => {
+    if (!dbUser) return
+    fetchSchedules({ user_id: dbUser.id })
+      .then(data => setAllSchedules(data.results ?? []))
+      .catch(() => {})
+  }, [dbUser])
+
+  // --- Effect: close switcher on outside click ---
+  useEffect(() => {
+    function handleClick(e) {
+      if (switcherRef.current && !switcherRef.current.contains(e.target)) {
+        setShowSwitcher(false)
+        setShowNewForm(false)
+        setConfirmDelete(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
   // --- Effect: debounced course search ---
   useEffect(() => {
     if (!debouncedQuery.trim()) {
@@ -75,8 +118,6 @@ export default function ScheduleBuilderPage() {
     let cancelled = false
     setSearching(true)
     const q = debouncedQuery.trim()
-    // Short all-letter queries (e.g. "CS", "MATH") are subject codes — use exact subject match
-    // to avoid false positives from names ending in "-ics" (Statistics, Economics, etc.)
     const isSubjectCode = /^[a-zA-Z]{1,5}$/.test(q)
     const params = isSubjectCode ? { subject: q, per_page: 10 } : { search: q, per_page: 10 }
     fetchCourses(params)
@@ -148,7 +189,6 @@ export default function ScheduleBuilderPage() {
       await refreshSchedule()
     } catch (err) {
       if (err?.status === 409) {
-        // Discriminate by presence of conflicts array, not by message string
         if (Array.isArray(err.body?.conflicts) && err.body.conflicts.length > 0) {
           setConflictData(err.body.conflicts)
         } else {
@@ -172,30 +212,63 @@ export default function ScheduleBuilderPage() {
     }
   }
 
-  // --- Ordered early returns ---
+  async function handleCreateNew(e) {
+    e.preventDefault()
+    if (!newSchName.trim() || creatingNew) return
+    setCreatingNew(true)
+    try {
+      const created = await createSchedule({ user_id: dbUser.id, name: newSchName.trim(), semester: newSchSemester })
+      navigate(`/schedules/${created.id}`)
+    } catch {
+      setCreatingNew(false)
+    }
+  }
+
+  async function handleRename(e) {
+    if (e) e.preventDefault()
+    const trimmed = editingName.trim()
+    if (!trimmed || trimmed === schedule?.name || renaming) return
+    setRenaming(true)
+    try {
+      await updateSchedule(scheduleId, { name: trimmed })
+      await refreshSchedule()
+      setAllSchedules(prev => prev.map(s => s.id === scheduleId ? { ...s, name: trimmed } : s))
+      setShowSwitcher(false)
+    } catch {
+      // ignore
+    } finally {
+      setRenaming(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (deleting) return
+    setDeleting(true)
+    try {
+      await deleteSchedule(scheduleId)
+      const remaining = allSchedules.filter(s => s.id !== scheduleId)
+      navigate(remaining.length > 0 ? `/schedules/${remaining[0].id}` : '/schedules', { replace: true })
+    } catch {
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
+  }
+
+  // --- Early returns ---
   if (authLoading) return <LoadingSpinner />
-  if (!user) return (
-    <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-      <p className="text-text-secondary text-sm mb-4">Sign in to build a schedule.</p>
-      <Link to="/login" className="text-c-red text-sm hover:underline">Sign in</Link>
-    </div>
-  )
+  if (!user) return null
   if (!dbUser) return <LoadingSpinner />
   if (pageLoading) return <LoadingSpinner />
   if (pageError) return <EmptyState message={pageError} />
   if (!schedule) return <EmptyState message="Schedule not found." />
 
   const addedSectionIds = new Set(schedule.sections.map(s => s.id))
+  const otherSchedules = allSchedules.filter(s => s.id !== scheduleId)
 
   return (
     <div className="max-w-screen-2xl mx-auto px-2 py-6">
-      <div className="mb-4">
-        <Link to="/schedules" className="text-xs text-text-muted hover:text-c-red transition-colors">
-          ← My Schedules
-        </Link>
-      </div>
-
       <div className="flex flex-col md:flex-row gap-4">
+
         {/* ============ LEFT PANEL — Course Search ============ */}
         <div className="md:w-1/3 shrink-0 bg-bg-card border border-border rounded-lg p-4">
           <h2 className="font-mono font-bold text-text-primary text-sm mb-3">Add Courses</h2>
@@ -280,12 +353,122 @@ export default function ScheduleBuilderPage() {
 
         {/* ============ RIGHT PANEL — Schedule View ============ */}
         <div className="flex-1 flex flex-col gap-4">
-          {/* Header */}
-          <div className="bg-bg-card border border-border rounded-lg p-4">
-            <h1 className="font-mono font-bold text-text-primary text-base">{schedule.name}</h1>
+
+          {/* Header with schedule switcher */}
+          <div ref={switcherRef} className="bg-bg-card border border-border rounded-lg p-4 relative">
+            <button
+              onClick={() => {
+                setShowSwitcher(v => !v)
+                setShowNewForm(false)
+                setEditingName(schedule.name)
+                setConfirmDelete(false)
+              }}
+              className="flex items-center gap-1.5 font-mono font-bold text-text-primary text-base hover:text-c-red transition-colors"
+            >
+              {schedule.name}
+              <span className="text-text-muted text-xs">{showSwitcher ? '▴' : '▾'}</span>
+            </button>
             <p className="text-xs text-text-muted font-mono mt-0.5">
               {semesterLabel(schedule.semester)} · {schedule.sections.length} section{schedule.sections.length !== 1 ? 's' : ''}
             </p>
+
+            {showSwitcher && (
+              <div className="absolute top-full left-0 mt-1 w-72 bg-bg-card border border-border rounded-lg shadow-xl z-20 overflow-hidden">
+
+                {/* Switch to another schedule */}
+                {otherSchedules.length > 0 && (
+                  <div className="py-1 border-b border-border">
+                    {otherSchedules.map(s => (
+                      <button key={s.id}
+                        onClick={() => { setShowSwitcher(false); navigate(`/schedules/${s.id}`) }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-bg-hover transition-colors">
+                        <span className="font-mono text-sm text-text-primary block">{s.name}</span>
+                        <span className="text-xs text-text-muted">{semesterLabel(s.semester)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* New schedule */}
+                <div className="border-b border-border">
+                  {showNewForm ? (
+                    <form onSubmit={handleCreateNew} className="p-3 flex flex-col gap-2">
+                      <input
+                        autoFocus
+                        type="text"
+                        value={newSchName}
+                        onChange={e => setNewSchName(e.target.value)}
+                        placeholder="Schedule name…"
+                        className="bg-bg-input border border-border rounded px-2 py-1.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-c-red"
+                      />
+                      <select
+                        value={newSchSemester}
+                        onChange={e => setNewSchSemester(e.target.value)}
+                        className="bg-bg-input border border-border rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-c-red"
+                      >
+                        {SEMESTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                      <div className="flex gap-2">
+                        <button type="submit" disabled={creatingNew}
+                          className="flex-1 bg-c-red text-white text-xs py-1.5 rounded hover:opacity-90 disabled:opacity-50">
+                          {creatingNew ? 'Creating…' : 'Create'}
+                        </button>
+                        <button type="button" onClick={() => setShowNewForm(false)}
+                          className="flex-1 bg-bg-input border border-border text-text-secondary text-xs py-1.5 rounded hover:border-text-muted transition-colors">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => { setShowNewForm(true); setConfirmDelete(false) }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-c-red hover:bg-bg-hover transition-colors">
+                      + New Schedule
+                    </button>
+                  )}
+                </div>
+
+                {/* Rename / Delete */}
+                <div className="py-1">
+                  {confirmDelete ? (
+                    <div className="px-4 py-2.5 flex items-center gap-3 text-xs">
+                      <span className="text-text-secondary">Delete this schedule?</span>
+                      <button onClick={handleDelete} disabled={deleting}
+                        className="text-rating-red hover:underline disabled:opacity-50">
+                        {deleting ? 'Deleting…' : 'Yes, delete'}
+                      </button>
+                      <button onClick={() => setConfirmDelete(false)}
+                        className="text-text-secondary hover:underline">
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <form onSubmit={handleRename} className="flex-1 flex items-center gap-1.5 px-3 py-1.5">
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={e => setEditingName(e.target.value)}
+                          className="flex-1 bg-bg-input border border-border rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-c-red min-w-0"
+                          placeholder="Rename…"
+                        />
+                        <button type="submit"
+                          disabled={renaming || !editingName.trim() || editingName.trim() === schedule.name}
+                          className="text-xs text-c-red hover:underline disabled:opacity-30 disabled:no-underline whitespace-nowrap">
+                          {renaming ? '…' : 'Save'}
+                        </button>
+                      </form>
+                      <button
+                        onClick={() => { setConfirmDelete(true); setShowNewForm(false) }}
+                        className="pr-4 py-1.5 text-xs text-text-muted hover:text-rating-red transition-colors shrink-0">
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
           </div>
 
           {/* Calendar */}
@@ -310,6 +493,7 @@ export default function ScheduleBuilderPage() {
               </div>
             )}
           </div>
+
         </div>
       </div>
 
