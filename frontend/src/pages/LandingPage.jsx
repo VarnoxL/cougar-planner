@@ -215,7 +215,7 @@ export default function LandingPage() {
           </p>
 
           <div className="lp-a4" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <PrimaryBtn to="/register">Get Started — Free <IconArrow /></PrimaryBtn>
+            <PrimaryBtn to="/schedules/guest">Get Started — Free <IconArrow /></PrimaryBtn>
             <SecondaryBtn to="/courses">Browse Courses</SecondaryBtn>
           </div>
 
@@ -286,7 +286,7 @@ export default function LandingPage() {
           <p style={{ fontSize: 16, color: '#9ca3af', marginBottom: 36 }}>
             Join SIUE students who use CougarPlanner every registration season.
           </p>
-          <PrimaryBtn to="/register" size="lg">Get Started — Free <IconArrow /></PrimaryBtn>
+          <PrimaryBtn to="/schedules/guest" size="lg">Get Started — Free <IconArrow /></PrimaryBtn>
           <div style={{ marginTop: 20, fontSize: 13, color: '#6b7280' }}>Free for all SIUE students.</div>
         </div>
       </section>

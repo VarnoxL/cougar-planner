@@ -11,6 +11,7 @@ import ProfessorsPage from './pages/ProfessorsPage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import ScheduleBuilderPage from './pages/ScheduleBuilderPage'
+import GuestScheduleBuilderPage from './pages/GuestScheduleBuilderPage'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/courses/:id" element={<CourseDetailPage />} />
           <Route path="/professors" element={<ProfessorsPage />} />
           <Route path="/professors/:id" element={<ProfessorDetailPage />} />
+          <Route path="/schedules/guest" element={<GuestScheduleBuilderPage />} />
           <Route path="/schedules" element={<ProtectedRoute><MySchedulesPage /></ProtectedRoute>} />
           <Route path="/schedules/:id" element={<ProtectedRoute><ScheduleBuilderPage /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
