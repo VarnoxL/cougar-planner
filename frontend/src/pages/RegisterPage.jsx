@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
@@ -16,7 +17,8 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await register(email, password)
-      navigate('/')
+      const from = location.state?.from?.pathname || '/profile'
+      navigate(from, { replace: true })
     } catch (err) {
       setError(err.message || 'Registration failed.')
     } finally {

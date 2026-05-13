@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import ProtectedRoute from './components/ProtectedRoute'
 import CourseDetailPage from './pages/CourseDetailPage'
 import CoursesPage from './pages/CoursesPage'
 import LandingPage from './pages/LandingPage'
@@ -22,11 +23,11 @@ function App() {
           <Route path="/courses/:id" element={<CourseDetailPage />} />
           <Route path="/professors" element={<ProfessorsPage />} />
           <Route path="/professors/:id" element={<ProfessorDetailPage />} />
-          <Route path="/schedules" element={<MySchedulesPage />} />
-          <Route path="/schedules/:id" element={<ScheduleBuilderPage />} />
+          <Route path="/schedules" element={<ProtectedRoute><MySchedulesPage /></ProtectedRoute>} />
+          <Route path="/schedules/:id" element={<ProtectedRoute><ScheduleBuilderPage /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

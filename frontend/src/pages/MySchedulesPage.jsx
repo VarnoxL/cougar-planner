@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 
 export default function MySchedulesPage() {
-  const { user, dbUser, loading: authLoading } = useAuth()
+  const { dbUser, loading: authLoading } = useAuth()
 
   const [schedules, setSchedules] = useState([])
   const [pageLoading, setPageLoading] = useState(true)
@@ -108,12 +108,6 @@ export default function MySchedulesPage() {
   }
 
   if (authLoading) return <LoadingSpinner />
-  if (!user) return (
-    <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-      <p className="text-text-secondary text-sm mb-4">Sign in to view your schedules.</p>
-      <Link to="/login" className="text-c-red text-sm hover:underline">Sign in</Link>
-    </div>
-  )
   if (!dbUser) return <LoadingSpinner />
   if (pageLoading) return <LoadingSpinner />
   if (pageError) return <EmptyState message={pageError} />
