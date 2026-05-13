@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function RegisterPage() {
-  const { register } = useAuth()
+  const { register, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState('')
@@ -11,14 +11,18 @@ export default function RegisterPage() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
+  const from = location.state?.from?.pathname || '/schedules'
+
+  useEffect(() => {
+    if (user) navigate(from, { replace: true })
+  }, [user])
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     setLoading(true)
     try {
       await register(email, password)
-      const from = location.state?.from?.pathname || '/profile'
-      navigate(from, { replace: true })
     } catch (err) {
       setError(err.message || 'Registration failed.')
     } finally {
