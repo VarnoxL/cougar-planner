@@ -88,6 +88,7 @@ class SavedSchedule(db.Model):
     name = db.Column(db.String(255))
     semester = db.Column(db.String(20), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    share_token = db.Column(db.String(36), unique=True, nullable=True, index=True)
 
     user = db.relationship("User", back_populates="saved_schedules")
     saved_schedule_sections = db.relationship("SavedScheduleSection", back_populates="saved_schedule")

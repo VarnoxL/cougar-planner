@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage'
 import ScheduleBuilderPage from './pages/ScheduleBuilderPage'
 import GuestScheduleBuilderPage from './pages/GuestScheduleBuilderPage'
 import NotFoundPage from './pages/NotFoundPage'
+import SharedSchedulePage from './pages/SharedSchedulePage'
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/s/:token" element={<SharedSchedulePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

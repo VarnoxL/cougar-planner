@@ -40,3 +40,13 @@ export function removeSection(id, sectionId) {
   if (sectionId == null) throw new Error('removeSection requires a section_id')
   return apiFetch(`/api/schedules/${id}/sections/${sectionId}`, { method: 'DELETE' })
 }
+
+export function shareSchedule(id) {
+  if (id == null) throw new Error('shareSchedule requires an id')
+  return apiFetch(`/api/schedules/${id}/share`, { method: 'POST' })
+}
+
+export function fetchSharedSchedule(token) {
+  if (!token) throw new Error('fetchSharedSchedule requires a token')
+  return apiFetch(`/api/schedules/share/${token}`)
+}

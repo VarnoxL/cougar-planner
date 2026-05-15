@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { fetchSchedules, fetchSchedule, addSection, removeSection, createSchedule, updateSchedule, deleteSchedule } from '../api/schedules'
+import { fetchSchedules, fetchSchedule, addSection, removeSection, createSchedule, updateSchedule, deleteSchedule, shareSchedule } from '../api/schedules'
 import { fetchCourses, fetchCourse } from '../api/courses'
 import { useDebounce } from '../hooks/useDebounce'
 import { SEMESTER_OPTIONS } from '../utils/constants'
@@ -51,6 +51,10 @@ export default function ScheduleBuilderPage() {
   const [renaming, setRenaming] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  // --- Share state ---
+  const [shareLabel, setShareLabel] = useState('Share')
+  const [showToast, setShowToast] = useState(false)
 
   // --- Effect: load schedule ---
   useEffect(() => {
@@ -177,6 +181,20 @@ export default function ScheduleBuilderPage() {
 
   function toggleCourseExpansion(courseId) {
     setExpandedCourseId(prev => (prev === courseId ? null : courseId))
+  }
+
+  async function handleShare() {
+    try {
+      const data = await shareSchedule(schedule.id)
+      const url = `${window.location.origin}/s/${data.share_token}`
+      await navigator.clipboard.writeText(url)
+      setShareLabel('Copied!')
+      setShowToast(true)
+      setTimeout(() => { setShareLabel('Share'); setShowToast(false) }, 2000)
+    } catch {
+      setShareLabel('Error')
+      setTimeout(() => setShareLabel('Share'), 2000)
+    }
   }
 
   // --- Handlers ---
@@ -371,6 +389,12 @@ export default function ScheduleBuilderPage() {
             <p className="text-xs text-text-muted font-mono mt-0.5">
               {semesterLabel(schedule.semester)} · {schedule.sections.length} section{schedule.sections.length !== 1 ? 's' : ''}
             </p>
+            <button
+              onClick={handleShare}
+              className="mt-2 text-xs text-text-secondary border border-border rounded px-2 py-1 hover:border-text-muted transition-colors"
+            >
+              {shareLabel}
+            </button>
 
             {showSwitcher && (
               <div className="absolute top-full left-0 mt-1 w-72 bg-bg-card border border-border rounded-lg shadow-xl z-20 overflow-hidden">
@@ -503,6 +527,13 @@ export default function ScheduleBuilderPage() {
           onClose={() => setConflictData(null)}
         />
       )}
+
+      <div
+        style={{ transition: 'opacity 0.2s, transform 0.2s' }}
+        className={`fixed bottom-6 right-6 z-50 bg-bg-card border border-border rounded-lg px-4 py-3 shadow-xl flex items-center gap-2 text-sm font-mono text-text-primary pointer-events-none ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+      >
+        <span className="text-green-400">✓</span> Link copied to clipboard
+      </div>
     </div>
   )
 }

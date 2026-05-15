@@ -237,3 +237,82 @@ def remove_section(schedule_id, section_id):
     db.session.delete(section)
     db.session.commit()
     return jsonify({"message": "Section removed"}), 200
+
+
+# POST /api/schedules/<schedule_id>/share
+# - @require_auth, verify ownership
+# - Generate UUID token on first call; idempotent on subsequent calls
+# - Return { "share_token": "..." }
+@schedules_bp.route("/api/schedules/<int:schedule_id>/share", methods=["POST"])
+@require_auth
+def share_schedule(schedule_id):
+    import uuid
+    schedule = SavedSchedule.query.get_or_404(schedule_id)
+    if g.decoded_token.get("uid") != schedule.user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
+    if not schedule.share_token:
+        schedule.share_token = str(uuid.uuid4())
+        db.session.commit()
+    return jsonify({"share_token": schedule.share_token})
+
+
+# GET /api/schedules/share/<token>
+# - No auth required — public endpoint
+# - Look up SavedSchedule by share_token; 404 if not found
+# - Return same shape as GET /api/schedules/<id>
+@schedules_bp.route("/api/schedules/share/<token>", methods=["GET"])
+def get_shared_schedule(token):
+    current_schedule = SavedSchedule.query.options(
+        joinedload(SavedSchedule.saved_schedule_sections)
+        .joinedload(SavedScheduleSection.section)
+        .joinedload(Section.professor),
+        joinedload(SavedSchedule.saved_schedule_sections)
+        .joinedload(SavedScheduleSection.section)
+        .joinedload(Section.course),
+        joinedload(SavedSchedule.saved_schedule_sections)
+        .joinedload(SavedScheduleSection.section)
+        .joinedload(Section.schedules),
+    ).filter_by(share_token=token).first_or_404()
+    section_list = []
+    for saved_schedule_section in current_schedule.saved_schedule_sections:
+        section = saved_schedule_section.section
+        professor = None
+        if section.professor:
+            professor = {
+                "id": section.professor.id,
+                "name": section.professor.name,
+                "rating": section.professor.rating,
+                "difficulty": section.professor.difficulty,
+            }
+        section_list.append({
+            "id": section.id,
+            "crn": section.crn,
+            "section_num": section.section_num,
+            "semester": section.semester,
+            "capacity": section.capacity,
+            "enrolled": section.enrolled,
+            "delivery_method": section.delivery_method,
+            "course": {
+                "id": section.course.id,
+                "subject": section.course.subject,
+                "number": section.course.number,
+                "name": section.course.name,
+            },
+            "professor": professor,
+            "schedules": [
+                {
+                    "day": sch.day,
+                    "start_time": sch.start_time,
+                    "end_time": sch.end_time,
+                    "location": sch.location,
+                }
+                for sch in section.schedules
+            ],
+        })
+    return jsonify({
+        "id": current_schedule.id,
+        "name": current_schedule.name,
+        "semester": current_schedule.semester,
+        "created_at": current_schedule.created_at.isoformat() if current_schedule.created_at else None,
+        "sections": section_list,
+    })
