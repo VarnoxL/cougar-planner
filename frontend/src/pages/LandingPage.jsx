@@ -190,6 +190,8 @@ export default function LandingPage() {
         .lp-a5 { animation: lp-fade-up 0.7s ease 0.7s both; }
         .lp-blink { animation: lp-blink 1.5s ease infinite; }
         .lp-glow { animation: lp-glow-pulse 5s ease-in-out infinite; }
+        @media (max-width: 639px) { .lp-app-preview { display: none; } }
+        @media (max-width: 639px) { .lp-stats-grid { grid-template-columns: repeat(2, 1fr) !important; } }
       `}</style>
 
       {/* ── HERO ── */}
@@ -232,7 +234,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="lp-a5" style={{ width: '100%', maxWidth: 900, position: 'relative', zIndex: 1 }}>
+        <div className="lp-a5 lp-app-preview" style={{ width: '100%', maxWidth: 900, position: 'relative', zIndex: 1 }}>
           <div style={{ position: 'absolute', bottom: -40, left: '50%', transform: 'translateX(-50%)', width: '90%', height: 60, background: `radial-gradient(ellipse, ${AC}20 0%, transparent 70%)`, borderRadius: '50%', filter: 'blur(20px)', pointerEvents: 'none' }} />
           <AppPreview />
         </div>
@@ -273,7 +275,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── STATS ── */}
-      <section className="lp-reveal" style={{ padding: '80px 40px', maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
+      <section className="lp-reveal lp-stats-grid" style={{ padding: '80px 40px', maxWidth: 900, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
         <Stat val="500+" label="Courses indexed" />
         <Stat val="RMP" label="Ratings integrated" />
         <Stat val="Real‑time" label="Seat availability" />
