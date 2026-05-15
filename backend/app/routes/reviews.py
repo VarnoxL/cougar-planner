@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, g
 from sqlalchemy.orm import joinedload
 from ..models import Review, Professor, Course, User
 from ..utils.auth import require_auth
-from .. import db
+from .. import db, limiter
 
 reviews_bp = Blueprint("reviews", __name__)
 
@@ -74,6 +74,7 @@ def list_reviews():
 # - Verify user, professor, and course all exist (404 if any missing)
 # - Create and commit the Review, return 201
 @reviews_bp.route("/api/reviews", methods=["POST"])
+@limiter.limit("10 per hour")
 @require_auth
 def create_review():
     data = request.get_json()
@@ -89,6 +90,9 @@ def create_review():
         return jsonify({"error": "permission denied"}), 403
     Professor.query.get_or_404(professor_id)
     Course.query.get_or_404(course_id)
+    existing = Review.query.filter_by(user_id=user_id, professor_id=professor_id, course_id=course_id).first()
+    if existing:
+        return jsonify({"error": "You have already reviewed this professor for this course"}), 409
     rating = data.get("rating")
     if rating is not None:
         if not isinstance(rating, int) or rating < 1 or rating > 5:
@@ -104,6 +108,8 @@ def create_review():
         if grade_received not in VALID_GRADES:
             return jsonify({"error": "grade_received must be one of: A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F, W"}), 400
     comment = data.get("comment")
+    if comment is not None and len(comment) > 2000:
+        return jsonify({"error": "comment must be 2000 characters or fewer"}), 400
     semester_taken = data.get("semester_taken")
     review = Review(user_id=user_id, professor_id=professor_id, course_id=course_id, grade_received=grade_received,
     comment=comment, semester_taken=semester_taken, rating=rating, difficulty=difficulty)

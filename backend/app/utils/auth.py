@@ -2,6 +2,7 @@ import functools
 import firebase_admin
 import firebase_admin.auth
 from flask import request, jsonify, g
+from werkzeug.exceptions import HTTPException
 
 def require_auth(f):
     @functools.wraps(f)
@@ -14,11 +15,13 @@ def require_auth(f):
         try:
             g.decoded_token = firebase_admin.auth.verify_id_token(token)
             return f(*args, **kwargs)
+        except HTTPException:
+            raise
         except firebase_admin.auth.ExpiredIdTokenError:
             return jsonify({"error": "Token expired"}), 401
         except firebase_admin.auth.InvalidIdTokenError:
             return jsonify({"error": "Invalid token"}), 401
-        except firebase_admin.auth.FirebaseError:
-            return jsonify({"error": "Authentication error"}), 500
+        except Exception:
+            return jsonify({"error": "Authentication error"}), 401
 
     return decorated

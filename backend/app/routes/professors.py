@@ -84,7 +84,6 @@ def get_professor(professor_id):
         "difficulty": professor.difficulty,
         "num_ratings": professor.num_ratings,
         "would_take_again": professor.would_take_again,
-        "rmp_id": professor.rmp_id,
         "courses": [
             {
                 "id": c.id,

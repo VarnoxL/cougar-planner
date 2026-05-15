@@ -13,11 +13,14 @@ schedules_bp = Blueprint("schedules", __name__)
 # - Return a list of the user's saved schedules
 # - Each item: id, name, semester, created_at, section_count
 @schedules_bp.route("/api/schedules", methods=["GET"])
+@require_auth
 def list_schedules():
     user_id = request.args.get("user_id")
     if not user_id:
         return jsonify({"error": "user_id is required"}), 400
-    User.query.get_or_404(user_id)
+    user = User.query.get_or_404(user_id)
+    if g.decoded_token.get("uid") != user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
@@ -83,8 +86,10 @@ def create_schedule():
 # - For each SavedScheduleSection → Section, nest: course, professor (nullable!), schedules[]
 # - See courses.py lines 42-49 for how to handle a nullable professor
 @schedules_bp.route("/api/schedules/<int:schedule_id>", methods=["GET"])
+@require_auth
 def get_schedule(schedule_id):
     current_schedule = SavedSchedule.query.options(
+        joinedload(SavedSchedule.user),
         joinedload(SavedSchedule.saved_schedule_sections)
         .joinedload(SavedScheduleSection.section)
         .joinedload(Section.professor),
@@ -95,6 +100,8 @@ def get_schedule(schedule_id):
         .joinedload(SavedScheduleSection.section)
         .joinedload(Section.schedules),
     ).get_or_404(schedule_id)
+    if g.decoded_token.get("uid") != current_schedule.user.firebase_uid:
+        return jsonify({"error": "permission denied"}), 403
     section_list = []
     for saved_schedule_section in current_schedule.saved_schedule_sections:
         section = saved_schedule_section.section

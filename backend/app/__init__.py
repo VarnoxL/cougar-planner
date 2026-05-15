@@ -1,12 +1,15 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import os, json
 import firebase_admin
 from firebase_admin import credentials
 
 
 db = SQLAlchemy()
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 def create_app(config_overrides=None):
     app = Flask(__name__)
@@ -18,6 +21,7 @@ def create_app(config_overrides=None):
         app.config.update(config_overrides)
 
     db.init_app(app)
+    limiter.init_app(app)
     CORS(app, origins=app.config["CORS_ORIGINS"])
     service_account = os.getenv('FIREBASE_SERVICE_ACCOUNT_JSON')
     if service_account and not firebase_admin._apps:
@@ -37,6 +41,10 @@ def create_app(config_overrides=None):
     app.register_blueprint(reviews_bp)
     app.register_blueprint(grade_distributions_bp)
     app.register_blueprint(users_bp)
+
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}, 200
 
     with app.app_context():
         from . import models

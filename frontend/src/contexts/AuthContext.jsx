@@ -28,14 +28,22 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [dbUser, setDbUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const record = await apiFetch('/api/users', { method: 'POST' }).catch(() => null)
-        setDbUser(record ?? null)
+        try {
+          const record = await apiFetch('/api/users', { method: 'POST' })
+          setDbUser(record)
+          setAuthError(null)
+        } catch (err) {
+          setDbUser(null)
+          setAuthError(err.body?.error || err.message || 'Account setup failed. Please refresh.')
+        }
       } else {
         setDbUser(null)
+        setAuthError(null)
       }
       setUser(firebaseUser)
       setLoading(false)
@@ -56,7 +64,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, dbUser, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, dbUser, loading, authError, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

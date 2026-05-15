@@ -9,6 +9,7 @@ def app():
     app = create_app({
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "RATELIMIT_ENABLED": False,
     })
 
     with app.app_context():
@@ -73,12 +74,14 @@ def mock_verify(uid):
 # --- GET /api/schedules ---
 
 def test_list_schedules_missing_user_id_returns_400(client):
-    resp = client.get("/api/schedules")
+    with mock_verify("uid1"):
+        resp = client.get("/api/schedules", headers=auth_headers("uid1"))
     assert resp.status_code == 400
 
 
 def test_list_schedules_unknown_user_returns_404(client):
-    resp = client.get("/api/schedules?user_id=9999")
+    with mock_verify("uid1"):
+        resp = client.get("/api/schedules?user_id=9999", headers=auth_headers("uid1"))
     assert resp.status_code == 404
 
 
@@ -90,7 +93,8 @@ def test_list_schedules_returns_user_schedules(app, client):
         db.session.commit()
         user_id = u.id
 
-    resp = client.get(f"/api/schedules?user_id={user_id}")
+    with mock_verify("uid1"):
+        resp = client.get(f"/api/schedules?user_id={user_id}", headers=auth_headers("uid1"))
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["total"] == 2
@@ -110,7 +114,8 @@ def test_list_schedules_includes_section_count(app, client):
         db.session.commit()
         user_id, schedule_id = u.id, ss.id
 
-    resp = client.get(f"/api/schedules?user_id={user_id}")
+    with mock_verify("uid1"):
+        resp = client.get(f"/api/schedules?user_id={user_id}", headers=auth_headers("uid1"))
     assert resp.status_code == 200
     result = next(r for r in resp.get_json()["results"] if r["id"] == schedule_id)
     assert result["section_count"] == 2
@@ -167,7 +172,8 @@ def test_create_schedule_wrong_user_returns_403(app, client):
 # --- GET /api/schedules/<id> ---
 
 def test_get_schedule_not_found_returns_404(client):
-    resp = client.get("/api/schedules/9999")
+    with mock_verify("uid1"):
+        resp = client.get("/api/schedules/9999", headers=auth_headers("uid1"))
     assert resp.status_code == 404
 
 
@@ -182,7 +188,8 @@ def test_get_schedule_returns_detail(app, client):
         db.session.commit()
         schedule_id = ss.id
 
-    resp = client.get(f"/api/schedules/{schedule_id}")
+    with mock_verify("uid1"):
+        resp = client.get(f"/api/schedules/{schedule_id}", headers=auth_headers("uid1"))
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["name"] == "Detail Test"
