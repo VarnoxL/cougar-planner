@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import ScheduleBuilderPage from './pages/ScheduleBuilderPage'
 import GuestScheduleBuilderPage from './pages/GuestScheduleBuilderPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
     </div>

@@ -1,4 +1,4 @@
-import { getAuth } from 'firebase/auth'
+import { getAuth, signOut } from 'firebase/auth'
 
 async function apiFetch(url, options = {}) {
   const auth = getAuth()
@@ -14,9 +14,18 @@ async function apiFetch(url, options = {}) {
     ...options.headers,
   }
 
-  const res = await fetch(url, { ...options, headers })
+  let res
+  try {
+    res = await fetch(url, { ...options, headers })
+  } catch {
+    throw new Error('Network error — check your connection.')
+  }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      await signOut(auth)
+      window.location.assign('/login')
+    }
     const body = await res.json().catch(() => ({}))
     const err = new Error(body.error || `HTTP ${res.status}`)
     err.status = res.status
