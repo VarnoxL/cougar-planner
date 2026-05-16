@@ -1,5 +1,7 @@
 import { getAuth, signOut } from 'firebase/auth'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+
 async function apiFetch(url, options = {}) {
   const auth = getAuth()
   const user = auth.currentUser
@@ -16,7 +18,7 @@ async function apiFetch(url, options = {}) {
 
   let res
   try {
-    res = await fetch(url, { ...options, headers })
+    res = await fetch(BASE_URL + url, { ...options, headers })
   } catch {
     throw new Error('Network error — check your connection.')
   }

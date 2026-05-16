@@ -9,7 +9,7 @@ from firebase_admin import credentials
 
 
 db = SQLAlchemy()
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
+limiter = Limiter(key_func=get_remote_address, default_limits=["60 per minute"])
 
 def create_app(config_overrides=None):
     app = Flask(__name__)
