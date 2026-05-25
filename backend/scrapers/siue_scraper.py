@@ -152,98 +152,99 @@ def parse_section(section):
         "meetings": meetings,
     }
 
-def upsert_sections(sections):
-    from app import create_app, db
-    from app.models import Section, Course, Professor, Schedule
-    app = create_app()
-    with app.app_context():
-        created = 0
-        updated = 0
-        skipped = 0
-    
-        for i, section in enumerate(sections, 1):
-            try:
-                data = parse_section(section)
-                course = Course.query.filter_by(subject=data["subject"], number=data["course_number"]).first()
-                if not course:
-                    course = Course(subject=data["subject"], number=data["course_number"], name=data["title"], credits=data["credits"])
-                    db.session.add(course)
-                    db.session.flush()
+def upsert_sections(sections, db, Section, Course, Professor, Schedule):
+    created = 0
+    updated = 0
+    skipped = 0
 
-                # Find professor — prefer matching by name against existing
-                # RMP-sourced records. Fall back to creating a new row only if
-                # no match exists at all, so we avoid duplicates when both
-                # scrapers run.
-                prof = Professor.query.filter_by(name=data["professor"]).first()
-                if not prof:
-                    # Try a looser match: "First Last" vs DB might have spacing diffs
-                    prof = Professor.query.filter(Professor.name.ilike(data["professor"])).first()
-                if not prof:
-                    prof = Professor(name=data["professor"])
-                    db.session.add(prof)
-                    db.session.flush()
+    for i, section in enumerate(sections, 1):
+        try:
+            data = parse_section(section)
+            course = Course.query.filter_by(subject=data["subject"], number=data["course_number"]).first()
+            if not course:
+                course = Course(subject=data["subject"], number=data["course_number"], name=data["title"], credits=data["credits"])
+                db.session.add(course)
+                db.session.flush()
 
-                # Upsert Section
-                existing = Section.query.filter_by(crn=data["crn"]).first()
-                if existing:
-                    existing.capacity = data["capacity"]
-                    existing.enrolled = data["enrolled"]
-                    existing.professor_id = prof.id
-                    existing.section_num = data["section_num"]
-                    existing.delivery_method = data["delivery_method"]
-                    updated += 1
-                else:
-                    existing = Section(
-                        crn=data["crn"],
-                        course_id=course.id,
-                        professor_id=prof.id,
-                        semester=TERM,
-                        section_num=data["section_num"],
-                        delivery_method=data["delivery_method"],
-                        capacity=data["capacity"],
-                        enrolled=data["enrolled"],
-                    )
-                    db.session.add(existing)
-                    db.session.flush()
-                    created += 1
+            # Find professor — prefer matching by name against existing
+            # RMP-sourced records. Fall back to creating a new row only if
+            # no match exists at all, so we avoid duplicates when both
+            # scrapers run.
+            prof = Professor.query.filter_by(name=data["professor"]).first()
+            if not prof:
+                # Try a looser match: "First Last" vs DB might have spacing diffs
+                prof = Professor.query.filter(Professor.name.ilike(data["professor"])).first()
+            if not prof:
+                prof = Professor(name=data["professor"])
+                db.session.add(prof)
+                db.session.flush()
 
-                # Upsert Schedule rows (one per day per meeting slot)
-                Schedule.query.filter_by(section_id=existing.id).delete()
-                for meeting in data["meetings"]:
-                    location = f"{meeting['building'] or ''} {meeting['room'] or ''}".strip()
-                    for day in ["monday", "tuesday", "wednesday", "thursday", "friday"]:
-                        if meeting.get(day):
-                            db.session.add(Schedule(
-                                section_id=existing.id,
-                                day=day,
-                                start_time=meeting["start_time"],
-                                end_time=meeting["end_time"],
-                                location=location,
-                            ))
+            # Upsert Section
+            existing = Section.query.filter_by(crn=data["crn"]).first()
+            if existing:
+                existing.capacity = data["capacity"]
+                existing.enrolled = data["enrolled"]
+                existing.professor_id = prof.id
+                existing.section_num = data["section_num"]
+                existing.delivery_method = data["delivery_method"]
+                updated += 1
+            else:
+                existing = Section(
+                    crn=data["crn"],
+                    course_id=course.id,
+                    professor_id=prof.id,
+                    semester=TERM,
+                    section_num=data["section_num"],
+                    delivery_method=data["delivery_method"],
+                    capacity=data["capacity"],
+                    enrolled=data["enrolled"],
+                )
+                db.session.add(existing)
+                db.session.flush()
+                created += 1
 
-                if i % 10 == 0:
-                    db.session.commit()
-                    print(f"  Saved {i}/{len(sections)} sections...")
+            # Upsert Schedule rows (one per day per meeting slot)
+            Schedule.query.filter_by(section_id=existing.id).delete()
+            for meeting in data["meetings"]:
+                location = f"{meeting['building'] or ''} {meeting['room'] or ''}".strip()
+                for day in ["monday", "tuesday", "wednesday", "thursday", "friday"]:
+                    if meeting.get(day):
+                        db.session.add(Schedule(
+                            section_id=existing.id,
+                            day=day,
+                            start_time=meeting["start_time"],
+                            end_time=meeting["end_time"],
+                            location=location,
+                        ))
 
-            except Exception as e:
-                print(f"  [ERROR] Section {i}: {e}", file=sys.stderr)
-                db.session.rollback()
-                skipped += 1
+            if i % 10 == 0:
+                db.session.commit()
+                print(f"  Saved {i}/{len(sections)} sections...")
 
-        db.session.commit()
-        print(f"\nDone. Created: {created} | Updated: {updated} | Skipped: {skipped}")
+        except Exception as e:
+            print(f"  [ERROR] Section {i}: {e}", file=sys.stderr)
+            db.session.rollback()
+            skipped += 1
 
+    db.session.commit()
+    print(f"\nDone. Created: {created} | Updated: {updated} | Skipped: {skipped}")
 
 
 if __name__ == "__main__":
-    session = create_session()
-    subjects = fetch_subjects(session)
-    for subject in subjects:
-        print(f"Fetching {subject} courses...")
-        courses = fetch_courses(session, subject)
-        upsert_sections(courses)
-        time.sleep(DELAY)
-        print(f"Done fetching {subject} courses")
+    from app import create_app, db
+    from app.models import Section, Course, Professor, Schedule
+
+    app = create_app()
+    banner_session = create_session()
+    subjects = fetch_subjects(banner_session)
+
+    with app.app_context():
+        for subject in subjects:
+            print(f"Fetching {subject} courses...")
+            courses = fetch_courses(banner_session, subject)
+            upsert_sections(courses, db, Section, Course, Professor, Schedule)
+            time.sleep(DELAY)
+            print(f"Done fetching {subject} courses")
     
        
 
