@@ -1,0 +1,32 @@
+services:
+  # RMP scraper — weekly professor ratings refresh
+  - type: cron
+    name: rmp-scraper
+    env: python
+    rootDir: backend
+    schedule: "0 3 * * 0"   # Every Sunday at 3am UTC
+    buildCommand: pip install -r requirements.txt
+    startCommand: PYTHONPATH=. python scrapers/rmp_scraper.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+
+  # SIUE Banner scraper — once per semester when registration opens
+  # April 1 catches Fall/Summer registration; October 1 catches Spring.
+  # Also trigger manually from the Render dashboard any time Banner opens a new term.
+  - type: cron
+    name: siue-scraper
+    env: python
+    rootDir: backend
+    schedule: "0 2 1 4,10 *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: PYTHONPATH=. python scrapers/siue_scraper.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: SIUE_TERM
+        sync: false
