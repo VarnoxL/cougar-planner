@@ -1,0 +1,30 @@
+name: SIUE Scraper
+
+on:
+  schedule:
+    - cron: "0 2 1 4,10 *"  # April 1 and October 1 at 2am UTC
+  workflow_dispatch:          # Allow manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      - run: PYTHONPATH=. python scrapers/siue_scraper.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          SIUE_TERM: ${{ secrets.SIUE_TERM }}
