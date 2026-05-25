@@ -3,18 +3,20 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function RegisterPage() {
-  const { register, user } = useAuth()
+  const { register, resendVerification, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [resent, setResent] = useState(false)
 
   const from = location.state?.from?.pathname || '/schedules'
 
   useEffect(() => {
-    if (user) navigate(from, { replace: true })
+    if (user?.emailVerified) navigate(from, { replace: true })
   }, [user])
 
   async function handleSubmit(e) {
@@ -23,6 +25,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       await register(email, password)
+      setSent(true)
     } catch (err) {
       setError(err.message || 'Registration failed.')
     } finally {
@@ -30,7 +33,33 @@ export default function RegisterPage() {
     }
   }
 
+  async function handleResend() {
+    try {
+      await resendVerification()
+      setResent(true)
+      setTimeout(() => setResent(false), 4000)
+    } catch {
+      // silently ignore — Firebase rate-limits this
+    }
+  }
+
   const inputClass = 'w-full bg-bg-input border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-c-red'
+
+  if (sent) {
+    return (
+      <div className="max-w-sm mx-auto px-4 py-16 text-center">
+        <h1 className="font-mono text-xl font-bold text-text-primary mb-3">Check your email</h1>
+        <p className="text-sm text-text-muted mb-6">
+          We sent a verification link to <span className="text-text-primary">{email}</span>.
+          Click it to activate your account, then{' '}
+          <Link to="/login" className="text-c-red hover:underline">sign in</Link>.
+        </p>
+        <button onClick={handleResend} className="text-sm text-c-red hover:underline">
+          {resent ? 'Email sent!' : 'Resend email'}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-sm mx-auto px-4 py-16">

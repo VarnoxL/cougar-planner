@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  sendEmailVerification,
 } from 'firebase/auth'
 import apiFetch from '../api/client'
 
@@ -33,13 +34,18 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        try {
-          const record = await apiFetch('/api/users', { method: 'POST' })
-          setDbUser(record)
-          setAuthError(null)
-        } catch (err) {
+        if (firebaseUser.emailVerified) {
+          try {
+            const record = await apiFetch('/api/users', { method: 'POST' })
+            setDbUser(record)
+            setAuthError(null)
+          } catch (err) {
+            setDbUser(null)
+            setAuthError(err.body?.error || err.message || 'Account setup failed. Please refresh.')
+          }
+        } else {
           setDbUser(null)
-          setAuthError(err.body?.error || err.message || 'Account setup failed. Please refresh.')
+          setAuthError(null)
         }
       } else {
         setDbUser(null)
@@ -52,7 +58,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function register(email, password) {
-    await createUserWithEmailAndPassword(auth, email, password)
+    const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password)
+    await sendEmailVerification(newUser)
   }
 
   async function login(email, password) {
@@ -63,8 +70,29 @@ export function AuthProvider({ children }) {
     await signOut(auth)
   }
 
+  async function resendVerification() {
+    if (auth.currentUser) await sendEmailVerification(auth.currentUser)
+  }
+
+  async function checkVerification() {
+    if (!auth.currentUser) return false
+    await auth.currentUser.reload()
+    if (auth.currentUser.emailVerified) {
+      try {
+        const record = await apiFetch('/api/users', { method: 'POST' })
+        setDbUser(record)
+        setAuthError(null)
+      } catch (err) {
+        setDbUser(null)
+        setAuthError(err.body?.error || err.message || 'Account setup failed. Please refresh.')
+      }
+      setUser({ ...auth.currentUser })
+    }
+    return auth.currentUser.emailVerified
+  }
+
   return (
-    <AuthContext.Provider value={{ user, dbUser, loading, authError, login, register, logout }}>
+    <AuthContext.Provider value={{ user, dbUser, loading, authError, login, register, logout, resendVerification, checkVerification }}>
       {children}
     </AuthContext.Provider>
   )
