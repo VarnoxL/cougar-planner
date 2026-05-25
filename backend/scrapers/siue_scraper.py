@@ -231,10 +231,11 @@ def upsert_sections(sections, db, Section, Course, Professor, Schedule):
 
 
 if __name__ == "__main__":
+    from sqlalchemy.pool import NullPool
     from app import create_app, db
     from app.models import Section, Course, Professor, Schedule
 
-    app = create_app()
+    app = create_app(config_overrides={"SQLALCHEMY_ENGINE_OPTIONS": {"poolclass": NullPool}})
     banner_session = create_session()
     subjects = fetch_subjects(banner_session)
 

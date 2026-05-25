@@ -117,65 +117,67 @@ def scrape_all_professors():
     return professors
 
 
-def upsert_professors(professors):
-    from app import create_app, db
-    from app.models import Professor
+def upsert_professors(professors, db, Professor):
+    created = 0
+    updated = 0
+    skipped = 0
 
-    app = create_app()
-    with app.app_context():
-        created = 0
-        updated = 0
-        skipped = 0
-
-        for i, prof_data in enumerate(professors, 1):
-            try:
-                rmp_id = prof_data.get("rmp_id")
-                if not rmp_id:
-                    skipped += 1
-                    continue
-
-                existing = Professor.query.filter_by(rmp_id=rmp_id).first()
-                if not existing:
-                    # Banner may have created a name-only record before RMP ran
-                    existing = Professor.query.filter(Professor.name.ilike(prof_data["name"])).first()
-
-                if existing:
-                    existing.rmp_id = rmp_id
-                    existing.name = prof_data["name"]
-                    existing.department = prof_data["department"]
-                    existing.rating = prof_data["rating"]
-                    existing.difficulty = prof_data["difficulty"]
-                    existing.would_take_again = prof_data["would_take_again"]
-                    existing.num_ratings = prof_data["num_ratings"]
-                    updated += 1
-                else:
-                    new_prof = Professor(
-                        rmp_id=rmp_id,
-                        name=prof_data["name"],
-                        department=prof_data["department"],
-                        rating=prof_data["rating"],
-                        difficulty=prof_data["difficulty"],
-                        would_take_again=prof_data["would_take_again"],
-                        num_ratings=prof_data["num_ratings"],
-                    )
-                    db.session.add(new_prof)
-                    created += 1
-
-                if i % 10 == 0:
-                    print(f"  Saved {i}/{len(professors)} professors...")
-                    db.session.commit()
-
-            except Exception as e:
-                print(f"  [ERROR] Skipping professor '{prof_data.get('name')}': {e}", file=sys.stderr)
-                db.session.rollback()
+    for i, prof_data in enumerate(professors, 1):
+        try:
+            rmp_id = prof_data.get("rmp_id")
+            if not rmp_id:
                 skipped += 1
+                continue
 
-        db.session.commit()
-        print(f"\nDone. Created: {created} | Updated: {updated} | Skipped: {skipped}")
+            existing = Professor.query.filter_by(rmp_id=rmp_id).first()
+            if not existing:
+                # Banner may have created a name-only record before RMP ran
+                existing = Professor.query.filter(Professor.name.ilike(prof_data["name"])).first()
+
+            if existing:
+                existing.rmp_id = rmp_id
+                existing.name = prof_data["name"]
+                existing.department = prof_data["department"]
+                existing.rating = prof_data["rating"]
+                existing.difficulty = prof_data["difficulty"]
+                existing.would_take_again = prof_data["would_take_again"]
+                existing.num_ratings = prof_data["num_ratings"]
+                updated += 1
+            else:
+                new_prof = Professor(
+                    rmp_id=rmp_id,
+                    name=prof_data["name"],
+                    department=prof_data["department"],
+                    rating=prof_data["rating"],
+                    difficulty=prof_data["difficulty"],
+                    would_take_again=prof_data["would_take_again"],
+                    num_ratings=prof_data["num_ratings"],
+                )
+                db.session.add(new_prof)
+                created += 1
+
+            if i % 10 == 0:
+                print(f"  Saved {i}/{len(professors)} professors...")
+                db.session.commit()
+
+        except Exception as e:
+            print(f"  [ERROR] Skipping professor '{prof_data.get('name')}': {e}", file=sys.stderr)
+            db.session.rollback()
+            skipped += 1
+
+    db.session.commit()
+    print(f"\nDone. Created: {created} | Updated: {updated} | Skipped: {skipped}")
 
 
 if __name__ == "__main__":
-    print("Scraping RMP data for SIUE (School ID 711)...")
+    from sqlalchemy.pool import NullPool
+    from app import create_app, db
+    from app.models import Professor
+
+    print("Scraping RMP data for SIUE...")
     professors = scrape_all_professors()
     print(f"\nScraped {len(professors)} professors total. Saving to database...")
-    upsert_professors(professors)
+
+    app = create_app(config_overrides={"SQLALCHEMY_ENGINE_OPTIONS": {"poolclass": NullPool}})
+    with app.app_context():
+        upsert_professors(professors, db, Professor)
