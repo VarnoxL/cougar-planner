@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { fetchCourses, fetchCourse } from '../api/courses'
+import { fetchCourses, fetchCourse, fetchSemesters } from '../api/courses'
 import { useDebounce } from '../hooks/useDebounce'
 import { SEMESTER_OPTIONS } from '../utils/constants'
 import { loadGuestSchedule, saveGuestSchedule, detectConflicts, isDuplicate } from '../utils/guestSchedule'
@@ -17,6 +17,7 @@ export default function GuestScheduleBuilderPage() {
 
   if (!loading && user) return <Navigate to="/schedules" replace />
 
+  const [semesterOptions, setSemesterOptions] = useState(SEMESTER_OPTIONS)
   const [semester, setSemester] = useState(SEMESTER_OPTIONS[0].value)
   const [sections, setSections] = useState([])
 
@@ -35,8 +36,20 @@ export default function GuestScheduleBuilderPage() {
 
   useEffect(() => {
     const saved = loadGuestSchedule()
-    setSemester(saved.semester)
     setSections(saved.sections)
+    fetchSemesters()
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSemesterOptions(data)
+          const isValid = data.some(o => o.value === saved.semester)
+          setSemester(isValid ? saved.semester : data[0].value)
+        } else {
+          setSemester(saved.semester)
+        }
+      })
+      .catch(() => {
+        setSemester(saved.semester)
+      })
   }, [])
 
   useEffect(() => {
@@ -91,7 +104,7 @@ export default function GuestScheduleBuilderPage() {
   }, [expandedCourseId])
 
   function semesterLabel(value) {
-    return SEMESTER_OPTIONS.find(o => o.value === value)?.label ?? value
+    return semesterOptions.find(o => o.value === value)?.label ?? value
   }
 
   function toggleCourseExpansion(courseId) {
@@ -253,7 +266,7 @@ export default function GuestScheduleBuilderPage() {
                 onChange={e => handleSemesterChange(e.target.value)}
                 className="bg-bg-input border border-border rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-c-red"
               >
-                {SEMESTER_OPTIONS.map(o => (
+                {semesterOptions.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>

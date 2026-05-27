@@ -11,3 +11,7 @@ export function fetchCourse(id) {
   if (id == null) throw new Error('fetchCourse requires an id')
   return apiFetch(`/api/courses/${id}`)
 }
+
+export function fetchSemesters() {
+  return apiFetch('/api/semesters')
+}

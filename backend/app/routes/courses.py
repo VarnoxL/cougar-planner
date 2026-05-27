@@ -1,9 +1,27 @@
+import re
 from flask import Blueprint, jsonify, request
-from sqlalchemy import case
+from sqlalchemy import case, distinct
 from sqlalchemy.orm import joinedload
 from ..models import Course, Section, Professor, Schedule
+from .. import db
 
 courses_bp = Blueprint("courses", __name__)
+
+
+def _term_label(code):
+    if len(code) == 6 and code.isdigit():
+        year, suffix = code[:4], code[4:]
+        names = {"80": "Fall", "50": "Summer", "35": "Summer I", "20": "Spring", "15": "Spring", "10": "Winter"}
+        term = names.get(suffix)
+        if term:
+            return f"{term} {year}"
+    return code
+
+
+@courses_bp.route("/api/semesters", methods=["GET"])
+def list_semesters():
+    rows = db.session.query(distinct(Section.semester)).order_by(Section.semester.desc()).all()
+    return jsonify([{"value": code, "label": _term_label(code)} for (code,) in rows if code])
 
 
 @courses_bp.route("/api/courses", methods=["GET"])
@@ -16,19 +34,29 @@ def list_courses():
     if subject:
         query = query.filter(Course.subject.ilike(subject))
     if search:
-        query = query.filter(
-            Course.subject.ilike(f"{search}%") |
-            Course.name.ilike(f"%{search}%") |
-            Course.number.ilike(f"%{search}%")
-        )
-        query = query.order_by(
-            case(
-                (Course.subject.ilike(f"{search}%"), 0),
-                else_=1
-            ),
-            Course.subject,
-            Course.number,
-        )
+        # Handle "SUBJECT NUMBER" format (e.g. "MATH 250", "cs 225")
+        subject_num = re.match(r'^([a-zA-Z]+)\s+(\w+)$', search.strip())
+        if subject_num:
+            subj, num = subject_num.group(1), subject_num.group(2)
+            query = query.filter(
+                Course.subject.ilike(subj) &
+                Course.number.ilike(f"{num}%")
+            )
+            query = query.order_by(Course.subject, Course.number)
+        else:
+            query = query.filter(
+                Course.subject.ilike(f"{search}%") |
+                Course.name.ilike(f"%{search}%") |
+                Course.number.ilike(f"%{search}%")
+            )
+            query = query.order_by(
+                case(
+                    (Course.subject.ilike(f"{search}%"), 0),
+                    else_=1
+                ),
+                Course.subject,
+                Course.number,
+            )
 
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)

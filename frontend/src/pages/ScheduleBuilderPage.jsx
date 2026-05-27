@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { fetchSchedules, fetchSchedule, addSection, removeSection, createSchedule, updateSchedule, deleteSchedule, shareSchedule } from '../api/schedules'
-import { fetchCourses, fetchCourse } from '../api/courses'
+import { fetchCourses, fetchCourse, fetchSemesters } from '../api/courses'
 import { useDebounce } from '../hooks/useDebounce'
 import { SEMESTER_OPTIONS } from '../utils/constants'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -40,6 +40,7 @@ export default function ScheduleBuilderPage() {
   const [duplicateFlashId, setDuplicateFlashId] = useState(null)
 
   // --- Switcher state ---
+  const [semesterOptions, setSemesterOptions] = useState(SEMESTER_OPTIONS)
   const [allSchedules, setAllSchedules] = useState([])
   const [showSwitcher, setShowSwitcher] = useState(false)
   const switcherRef = useRef(null)
@@ -90,6 +91,18 @@ export default function ScheduleBuilderPage() {
     setShowNewForm(false)
     setConfirmDelete(false)
   }, [scheduleId])
+
+  // --- Effect: load available semesters ---
+  useEffect(() => {
+    fetchSemesters()
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSemesterOptions(data)
+          setNewSchSemester(data[0].value)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   // --- Effect: load all schedules for switcher ---
   useEffect(() => {
@@ -176,7 +189,7 @@ export default function ScheduleBuilderPage() {
   }
 
   function semesterLabel(value) {
-    return SEMESTER_OPTIONS.find(o => o.value === value)?.label ?? value
+    return semesterOptions.find(o => o.value === value)?.label ?? value
   }
 
   function toggleCourseExpansion(courseId) {
@@ -430,7 +443,7 @@ export default function ScheduleBuilderPage() {
                         onChange={e => setNewSchSemester(e.target.value)}
                         className="bg-bg-input border border-border rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-c-red"
                       >
-                        {SEMESTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        {semesterOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                       <div className="flex gap-2">
                         <button type="submit" disabled={creatingNew}
