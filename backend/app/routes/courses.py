@@ -11,7 +11,7 @@ courses_bp = Blueprint("courses", __name__)
 def _term_label(code):
     if len(code) == 6 and code.isdigit():
         year, suffix = code[:4], code[4:]
-        names = {"80": "Fall", "50": "Summer", "35": "Summer I", "20": "Spring", "15": "Spring", "10": "Winter"}
+        names = {"35": "Fall", "25": "Summer", "15": "Spring"}
         term = names.get(suffix)
         if term:
             return f"{term} {year}"
