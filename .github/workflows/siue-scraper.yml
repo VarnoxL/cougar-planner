@@ -9,6 +9,11 @@ on:
         description: 'Term code to scrape (e.g. 202680 for Fall 2026). Leave blank to auto-detect the latest term.'
         required: false
         default: ''
+      list_terms:
+        description: 'Print all available Banner term codes and exit without scraping.'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   scrape:
@@ -28,7 +33,10 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - run: PYTHONPATH=. python scrapers/siue_scraper.py
+      - run: |
+          FLAGS=""
+          if [ "${{ inputs.list_terms }}" = "true" ]; then FLAGS="--list-terms"; fi
+          PYTHONPATH=. python scrapers/siue_scraper.py $FLAGS
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}

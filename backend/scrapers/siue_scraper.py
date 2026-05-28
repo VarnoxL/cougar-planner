@@ -26,6 +26,20 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; cougar-planner/1.0; +https://cougar-planner.com)"
 }
 
+TERM = None  # set in __main__ after arg parsing
+
+
+def list_all_terms():
+    response = requests.get(
+        f"{BASE_URL}/classSearch/getTerms",
+        params={"searchTerm": "", "offset": 1, "max": 20},
+        headers=HEADERS,
+        timeout=15,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 def fetch_latest_term():
     """
     Return the term to scrape. If SIUE_TERM is set, use it as an explicit
@@ -38,14 +52,7 @@ def fetch_latest_term():
         return override
 
     try:
-        response = requests.get(
-            f"{BASE_URL}/classSearch/getTerms",
-            params={"searchTerm": "", "offset": 1, "max": 10},
-            headers=HEADERS,
-            timeout=15,
-        )
-        response.raise_for_status()
-        terms = response.json()
+        terms = list_all_terms()
         if terms:
             latest = terms[0]["code"]
             print(f"Auto-detected term: {terms[0]['description']} ({latest})")
@@ -54,9 +61,6 @@ def fetch_latest_term():
         print(f"Could not fetch terms from Banner: {e}", file=sys.stderr)
 
     raise RuntimeError("No term available — set SIUE_TERM env var or check Banner connectivity.")
-
-
-TERM = fetch_latest_term()
 
 
 def create_session():
@@ -232,6 +236,24 @@ def upsert_sections(sections, db, Section, Course, Professor, Schedule):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--list-terms", action="store_true", help="Print all available Banner terms and exit")
+    args = parser.parse_args()
+
+    if args.list_terms:
+        try:
+            terms = list_all_terms()
+            print("Available terms:")
+            for t in terms:
+                print(f"  {t['code']} — {t['description']}")
+        except Exception as e:
+            print(f"Error fetching terms: {e}", file=sys.stderr)
+            sys.exit(1)
+        sys.exit(0)
+
+    TERM = fetch_latest_term()
+
     from sqlalchemy.pool import NullPool
     from app import create_app, db
     from app.models import Section, Course, Professor, Schedule
@@ -247,6 +269,3 @@ if __name__ == "__main__":
             upsert_sections(courses, db, Section, Course, Professor, Schedule)
             time.sleep(DELAY)
             print(f"Done fetching {subject} courses")
-    
-       
-
