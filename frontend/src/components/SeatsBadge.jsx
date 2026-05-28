@@ -7,6 +7,13 @@ const bgTint = {
 }
 
 export default function SeatsBadge({ capacity, enrolled }) {
+  if (!capacity) {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-sm bg-bg-input text-text-muted">
+        TBA
+      </span>
+    )
+  }
   const open = capacity - enrolled
   const textClass = seatsColor(open, capacity)
   const bgClass = bgTint[textClass]
