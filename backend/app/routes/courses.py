@@ -1,6 +1,6 @@
 import re
 from flask import Blueprint, jsonify, request
-from sqlalchemy import case, distinct
+from sqlalchemy import case, func
 from sqlalchemy.orm import joinedload
 from ..models import Course, Section, Professor, Schedule
 from .. import db
@@ -20,7 +20,13 @@ def _term_label(code):
 
 @courses_bp.route("/api/semesters", methods=["GET"])
 def list_semesters():
-    rows = db.session.query(distinct(Section.semester)).order_by(Section.semester.desc()).all()
+    rows = (
+        db.session.query(Section.semester)
+        .group_by(Section.semester)
+        .having(func.max(Section.capacity) > 0)
+        .order_by(Section.semester.desc())
+        .all()
+    )
     return jsonify([{"value": code, "label": _term_label(code)} for (code,) in rows if code])
 
 
