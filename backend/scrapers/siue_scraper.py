@@ -187,6 +187,7 @@ def upsert_sections(sections, db, Section, Course, Professor, Schedule):
             # Upsert Section
             existing = Section.query.filter_by(crn=data["crn"]).first()
             if existing:
+                existing.semester = TERM
                 existing.capacity = data["capacity"]
                 existing.enrolled = data["enrolled"]
                 existing.professor_id = prof.id
