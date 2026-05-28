@@ -23,7 +23,9 @@ def list_semesters():
     rows = (
         db.session.query(Section.semester)
         .group_by(Section.semester)
-        .having(func.max(Section.capacity) > 0)
+        .having(
+            func.sum(case((Section.capacity > 0, 1), else_=0)) * 2 >= func.count(Section.id)
+        )
         .order_by(Section.semester.desc())
         .all()
     )
