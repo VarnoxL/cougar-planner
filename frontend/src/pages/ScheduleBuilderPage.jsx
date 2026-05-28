@@ -326,6 +326,9 @@ export default function ScheduleBuilderPage() {
             <div className="flex flex-col gap-2">
               {searchResults.map(course => {
                 const isExpanded = expandedCourseId === course.id
+                const semSections = (expandedCourse && expandedCourse.id === course.id)
+                  ? expandedCourse.sections.filter(s => s.semester === schedule.semester)
+                  : []
                 return (
                   <div key={course.id} className="border border-border rounded-lg overflow-hidden">
                     <button
@@ -350,10 +353,10 @@ export default function ScheduleBuilderPage() {
                         {expandedLoading && <LoadingSpinner />}
                         {!expandedLoading && expandedCourse && expandedCourse.id === course.id && (
                           <>
-                            {expandedCourse.sections.length === 0 ? (
-                              <EmptyState message="No sections offered." />
+                            {semSections.length === 0 ? (
+                              <EmptyState message="No sections offered this semester." />
                             ) : (
-                              expandedCourse.sections.map(section => {
+                              semSections.map(section => {
                                 const alreadyAdded = addedSectionIds.has(section.id)
                                 const showFlash = duplicateFlashId === section.id
                                 return (
