@@ -1,4 +1,5 @@
 import re
+from datetime import date
 from flask import Blueprint, jsonify, request
 from sqlalchemy import case, func
 from sqlalchemy.orm import joinedload
@@ -6,6 +7,8 @@ from ..models import Course, Section, Professor, Schedule
 from .. import db
 
 courses_bp = Blueprint("courses", __name__)
+
+_TERM_START_MONTH = {"15": 1, "25": 6, "35": 8}
 
 
 def _term_label(code):
@@ -18,18 +21,33 @@ def _term_label(code):
     return code
 
 
+def _is_visible(code):
+    """Hide terms that start more than 4 months from today (not yet in registration)."""
+    if len(code) != 6 or not code.isdigit():
+        return True
+    year, suffix = int(code[:4]), code[4:]
+    month = _TERM_START_MONTH.get(suffix)
+    if not month:
+        return True
+    today = date.today()
+    months_until = (year - today.year) * 12 + (month - today.month)
+    return months_until <= 4
+
+
 @courses_bp.route("/api/semesters", methods=["GET"])
 def list_semesters():
     rows = (
         db.session.query(Section.semester)
         .group_by(Section.semester)
-        .having(
-            func.sum(case((Section.capacity > 0, 1), else_=0)) * 2 >= func.count(Section.id)
-        )
+        .having(func.max(Section.capacity) > 0)
         .order_by(Section.semester.desc())
         .all()
     )
-    return jsonify([{"value": code, "label": _term_label(code)} for (code,) in rows if code])
+    return jsonify([
+        {"value": code, "label": _term_label(code)}
+        for (code,) in rows
+        if code and _is_visible(code)
+    ])
 
 
 @courses_bp.route("/api/courses", methods=["GET"])
