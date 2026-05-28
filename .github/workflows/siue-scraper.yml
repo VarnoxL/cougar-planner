@@ -3,7 +3,12 @@ name: SIUE Scraper
 on:
   schedule:
     - cron: "0 2 1 4,10 *"  # April 1 and October 1 at 2am UTC
-  workflow_dispatch:          # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      term:
+        description: 'Term code to scrape (e.g. 202680 for Fall 2026). Leave blank to auto-detect the latest term.'
+        required: false
+        default: ''
 
 jobs:
   scrape:
@@ -27,4 +32,4 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          SIUE_TERM: ${{ secrets.SIUE_TERM }}
+          SIUE_TERM: ${{ inputs.term || secrets.SIUE_TERM }}

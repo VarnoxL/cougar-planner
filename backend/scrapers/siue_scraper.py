@@ -28,10 +28,15 @@ HEADERS = {
 
 def fetch_latest_term():
     """
-    Fetch available terms from Banner and return the most recent one.
-    Falls back to SIUE_TERM in .env if the request fails.
+    Return the term to scrape. If SIUE_TERM is set, use it as an explicit
+    override (useful for backfilling a specific term). Otherwise auto-detect
+    the latest open term from Banner.
     """
-    fallback = os.getenv("SIUE_TERM")
+    override = os.getenv("SIUE_TERM")
+    if override:
+        print(f"Using specified term: {override}")
+        return override
+
     try:
         response = requests.get(
             f"{BASE_URL}/classSearch/getTerms",
@@ -48,11 +53,7 @@ def fetch_latest_term():
     except Exception as e:
         print(f"Could not fetch terms from Banner: {e}", file=sys.stderr)
 
-    if fallback:
-        print(f"Falling back to SIUE_TERM from .env: {fallback}")
-        return fallback
-
-    raise RuntimeError("No term available — set SIUE_TERM in .env or check Banner connectivity.")
+    raise RuntimeError("No term available — set SIUE_TERM env var or check Banner connectivity.")
 
 
 TERM = fetch_latest_term()
