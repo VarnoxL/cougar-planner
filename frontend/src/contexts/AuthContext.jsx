@@ -5,6 +5,8 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   sendEmailVerification,
 } from 'firebase/auth'
@@ -66,6 +68,10 @@ export function AuthProvider({ children }) {
     await signInWithEmailAndPassword(auth, email, password)
   }
 
+  async function signInWithGoogle() {
+    await signInWithPopup(auth, new GoogleAuthProvider())
+  }
+
   async function logout() {
     await signOut(auth)
   }
@@ -92,7 +98,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, dbUser, loading, authError, login, register, logout, resendVerification, checkVerification }}>
+    <AuthContext.Provider value={{ user, dbUser, loading, authError, login, register, signInWithGoogle, logout, resendVerification, checkVerification }}>
       {children}
     </AuthContext.Provider>
   )
