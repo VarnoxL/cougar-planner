@@ -14,6 +14,8 @@ def require_auth(f):
         token = parts[1]
         try:
             g.decoded_token = firebase_admin.auth.verify_id_token(token)
+            if not g.decoded_token.get('email_verified', False):
+                return jsonify({"error": "Email not verified"}), 403
             return f(*args, **kwargs)
         except HTTPException:
             raise

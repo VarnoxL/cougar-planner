@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const from = location.state?.from?.pathname || '/'
+  const from = location.state?.from?.pathname || '/schedules'
 
   async function handleSubmit(e) {
     e.preventDefault()

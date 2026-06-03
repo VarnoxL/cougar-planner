@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -6,7 +6,15 @@ export default function ProtectedRoute({ children }) {
   const { user, loading, authError, logout, resendVerification, checkVerification } = useAuth()
   const location = useLocation()
   const [notVerifiedYet, setNotVerifiedYet] = useState(false)
-  const [resent, setResent] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const id = setInterval(() => {
+      setCooldown(c => (c <= 1 ? 0 : c - 1))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [cooldown > 0])
 
   if (loading) return null
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
@@ -19,9 +27,13 @@ export default function ProtectedRoute({ children }) {
     }
 
     async function handleResend() {
-      await resendVerification()
-      setResent(true)
-      setTimeout(() => setResent(false), 4000)
+      if (cooldown > 0) return
+      try {
+        await resendVerification()
+        setCooldown(60)
+      } catch {
+        // silently ignore — Firebase rate-limits this
+      }
     }
 
     return (
@@ -41,8 +53,12 @@ export default function ProtectedRoute({ children }) {
             Not verified yet — check your inbox and click the link first.
           </p>
         )}
-        <button onClick={handleResend} className="text-sm text-text-muted hover:underline">
-          {resent ? 'Email sent!' : 'Resend verification email'}
+        <button
+          onClick={handleResend}
+          disabled={cooldown > 0}
+          className="text-sm text-text-muted hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed"
+        >
+          {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend verification email'}
         </button>
       </div>
     )

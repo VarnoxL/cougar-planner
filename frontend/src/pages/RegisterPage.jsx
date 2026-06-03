@@ -22,13 +22,21 @@ export default function RegisterPage() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const [resent, setResent] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
 
   const from = location.state?.from?.pathname || '/schedules'
 
   useEffect(() => {
     if (user?.emailVerified) navigate(from, { replace: true })
   }, [user])
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const id = setInterval(() => {
+      setCooldown(c => (c <= 1 ? 0 : c - 1))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [cooldown > 0])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -58,10 +66,10 @@ export default function RegisterPage() {
   }
 
   async function handleResend() {
+    if (cooldown > 0) return
     try {
       await resendVerification()
-      setResent(true)
-      setTimeout(() => setResent(false), 4000)
+      setCooldown(60)
     } catch {
       // silently ignore — Firebase rate-limits this
     }
@@ -78,8 +86,12 @@ export default function RegisterPage() {
           Click it to activate your account, then{' '}
           <Link to="/login" className="text-c-red hover:underline">sign in</Link>.
         </p>
-        <button onClick={handleResend} className="text-sm text-c-red hover:underline">
-          {resent ? 'Email sent!' : 'Resend email'}
+        <button
+          onClick={handleResend}
+          disabled={cooldown > 0}
+          className="text-sm text-c-red hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed"
+        >
+          {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend email'}
         </button>
       </div>
     )
