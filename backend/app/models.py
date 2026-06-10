@@ -16,6 +16,7 @@ class Professor(db.Model):
 
     sections = db.relationship("Section", back_populates="professor")
     reviews = db.relationship("Review", back_populates="professor")
+    rmp_reviews = db.relationship("RmpReview", back_populates="professor")
     grade_distributions = db.relationship("GradeDistribution", back_populates="professor")
 
 
@@ -103,6 +104,25 @@ class SavedScheduleSection(db.Model):
 
     saved_schedule = db.relationship("SavedSchedule", back_populates="saved_schedule_sections")
     section = db.relationship("Section", back_populates="saved_schedule_sections")
+
+
+class RmpReview(db.Model):
+    __tablename__ = "rmp_reviews"
+
+    id = db.Column(db.Integer, primary_key=True)
+    professor_id = db.Column(db.Integer, db.ForeignKey("professors.id"), nullable=False, index=True)
+    rmp_id = db.Column(db.String(100), unique=True, nullable=False)
+    rating = db.Column(db.Float)
+    difficulty = db.Column(db.Float)
+    comment = db.Column(db.Text)
+    course = db.Column(db.String(100))
+    review_date = db.Column(db.DateTime)
+    would_take_again = db.Column(db.Boolean)
+    helpful_rating = db.Column(db.Integer)
+    clarity_rating = db.Column(db.Integer)
+    synced_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    professor = db.relationship("Professor", back_populates="rmp_reviews")
 
 
 class Review(db.Model):

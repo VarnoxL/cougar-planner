@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { fetchProfessor } from '../api/professors'
+import { fetchProfessor, fetchRmpReviews } from '../api/professors'
 import { fetchReviews, deleteReview } from '../api/reviews'
 import { fetchGradeDistributionSummary } from '../api/gradeDistributions'
 import { useAuth } from '../contexts/AuthContext'
 import ReviewCard from '../components/ReviewCard'
+import RmpReviewCard from '../components/RmpReviewCard'
 import ReviewForm from '../components/ReviewForm'
 import GradeDistChart from '../components/GradeDistChart'
 import RatingBadge from '../components/RatingBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
 
-const TABS = ['Info', 'Reviews', 'Grades']
+const TABS = ['Info', 'Grades']
 
 function getInitials(name) {
   if (!name) return '?'
@@ -24,6 +25,13 @@ export default function ProfessorDetailPage() {
 
   const [professor, setProfessor] = useState(null)
   const [reviews, setReviews] = useState([])
+  const [rmpReviews, setRmpReviews] = useState([])
+  const [rmpPage, setRmpPage] = useState(1)
+  const [rmpPages, setRmpPages] = useState(0)
+  const [rmpTotal, setRmpTotal] = useState(0)
+  const [rmpLoading, setRmpLoading] = useState(false)
+  const [rmpError, setRmpError] = useState(null)
+  const [rmpFetchError, setRmpFetchError] = useState(null)
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -34,19 +42,35 @@ export default function ProfessorDetailPage() {
     let cancelled = false
     setLoading(true)
     setError(null)
+    setRmpFetchError(null)
 
-    Promise.all([
-      fetchProfessor(id),
-      fetchReviews({ professor_id: id }).catch(() => ({ results: [] })),
-      fetchGradeDistributionSummary({ professor_id: id }).catch(() => null),
-    ])
-      .then(([profData, reviewsData, summaryData]) => {
-        if (!cancelled) {
-          setProfessor(profData)
-          setReviews(reviewsData.results ?? [])
-          setSummary(summaryData)
-          setLoading(false)
-        }
+    fetchProfessor(id)
+      .then(async (profData) => {
+        if (cancelled) return
+        setProfessor(profData)
+
+        const [reviewsData, rmpData, summaryData] = await Promise.all([
+          fetchReviews({ professor_id: id }).catch(() => ({ results: [] })),
+          fetchRmpReviews(id).catch((err) => {
+            if (!cancelled) {
+              const msg = err.status === 404
+                ? 'RateMyProfessors reviews are not available yet. Restart the backend or redeploy the API.'
+                : (err.message || 'Failed to load RateMyProfessors reviews.')
+              setRmpFetchError(msg)
+            }
+            return { results: [], page: 1, pages: 0, total: 0 }
+          }),
+          fetchGradeDistributionSummary({ professor_id: id }).catch(() => null),
+        ])
+
+        if (cancelled) return
+        setReviews(reviewsData.results ?? [])
+        setRmpReviews(rmpData.results ?? [])
+        setRmpPage(rmpData.page ?? 1)
+        setRmpPages(rmpData.pages ?? 0)
+        setRmpTotal(rmpData.total ?? 0)
+        setSummary(summaryData)
+        setLoading(false)
       })
       .catch((err) => {
         if (!cancelled) {
@@ -61,6 +85,23 @@ export default function ProfessorDetailPage() {
   async function handleDelete(reviewId) {
     await deleteReview(reviewId)
     setReviews(prev => prev.filter(r => r.id !== reviewId))
+  }
+
+  async function loadMoreRmpReviews() {
+    if (rmpPage >= rmpPages || rmpLoading) return
+    setRmpLoading(true)
+    setRmpError(null)
+    try {
+      const data = await fetchRmpReviews(id, { page: rmpPage + 1 })
+      setRmpReviews(prev => [...prev, ...(data.results ?? [])])
+      setRmpPage(data.page ?? rmpPage + 1)
+      setRmpPages(data.pages ?? rmpPages)
+      setRmpTotal(data.total ?? rmpTotal)
+    } catch (err) {
+      setRmpError(err.message || 'Failed to load more RateMyProfessors reviews.')
+    } finally {
+      setRmpLoading(false)
+    }
   }
 
   if (loading) return <LoadingSpinner />
@@ -102,28 +143,33 @@ export default function ProfessorDetailPage() {
     </div>
   )
 
-  const reviewsList = (
+  const cougarReviewsList = (
     <div className="bg-bg-card border border-border rounded-lg px-4">
       <div className="py-3 border-b border-border flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-text-muted">
-          Student Reviews
-          {reviews.length > 0 && (
-            <span className="ml-2 font-mono normal-case tracking-normal text-text-muted">
-              — {reviews.length} total
-            </span>
-          )}
-        </h2>
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-text-muted">
+            Cougar Planner Reviews
+            {reviews.length > 0 && (
+              <span className="ml-2 font-mono normal-case tracking-normal text-text-muted">
+                — {reviews.length} total
+              </span>
+            )}
+          </h2>
+          <p className="text-[11px] text-text-muted mt-1">
+            Reviews submitted by SIUE students on this site.
+          </p>
+        </div>
         {user ? (
           <button
             onClick={() => setShowForm(true)}
-            className="text-[11px] font-semibold bg-c-red text-white px-3 py-1 rounded-lg hover:bg-c-red-hover transition-colors"
+            className="text-[11px] font-semibold bg-c-red text-white px-3 py-1 rounded-lg hover:bg-c-red-hover transition-colors shrink-0"
           >
             Write a Review
           </button>
         ) : (
           <Link
             to="/login"
-            className="text-[11px] text-text-muted hover:text-text-secondary transition-colors"
+            className="text-[11px] text-text-muted hover:text-text-secondary transition-colors shrink-0"
           >
             Sign in to review
           </Link>
@@ -131,7 +177,7 @@ export default function ProfessorDetailPage() {
       </div>
       {reviews.length === 0 ? (
         <div className="py-6">
-          <EmptyState message="No reviews yet." />
+          <EmptyState message="No Cougar Planner reviews yet." />
         </div>
       ) : (
         reviews.map((r) => (
@@ -146,6 +192,81 @@ export default function ProfessorDetailPage() {
           />
         ))
       )}
+    </div>
+  )
+
+  const rmpProfileUrl = professor.rmp_legacy_id
+    ? `https://www.ratemyprofessors.com/professor/${professor.rmp_legacy_id}`
+    : null
+
+  const rmpReviewsList = (
+    <div className="bg-bg-card border border-border rounded-lg px-4">
+      <div className="py-3 border-b border-border">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-text-muted">
+          RateMyProfessors Reviews
+          {rmpTotal > 0 && (
+            <span className="ml-2 font-mono normal-case tracking-normal text-text-muted">
+              — {rmpTotal} total
+            </span>
+          )}
+        </h2>
+        <p className="text-[11px] text-text-muted mt-1">
+          Imported from RateMyProfessors — not submitted on Cougar Planner.
+          {rmpProfileUrl && (
+            <>
+              {' '}
+              <a
+                href={rmpProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-c-red hover:underline"
+              >
+                View on RMP ↗
+              </a>
+            </>
+          )}
+        </p>
+      </div>
+      {!professor.rmp_legacy_id ? (
+        <div className="py-6">
+          <EmptyState message="This professor is not linked to a RateMyProfessors profile." />
+        </div>
+      ) : rmpFetchError ? (
+        <div className="py-6">
+          <EmptyState message={rmpFetchError} />
+        </div>
+      ) : rmpReviews.length === 0 ? (
+        <div className="py-6">
+          <EmptyState message="No RateMyProfessors reviews found." />
+        </div>
+      ) : (
+        <>
+          {rmpReviews.map((r) => (
+            <RmpReviewCard key={r.id} review={r} />
+          ))}
+          {rmpPage < rmpPages && (
+            <div className="py-4 flex flex-col items-center gap-2">
+              {rmpError && (
+                <p className="text-[11px] text-c-red">{rmpError}</p>
+              )}
+              <button
+                onClick={loadMoreRmpReviews}
+                disabled={rmpLoading}
+                className="text-[11px] font-semibold text-text-secondary border border-border px-3 py-1 rounded-lg hover:border-text-muted transition-colors disabled:opacity-50"
+              >
+                {rmpLoading ? 'Loading…' : 'Load more from RMP'}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+
+  const reviewsList = (
+    <div className="flex flex-col gap-4">
+      {rmpReviewsList}
+      {cougarReviewsList}
     </div>
   )
 
@@ -171,15 +292,15 @@ export default function ProfessorDetailPage() {
             </h1>
             <p className="text-[13px] text-text-secondary">
               {professor.department || 'SIUE'}
-              {professor.num_ratings > 0 && (
+              {(professor.rmp_num_ratings ?? professor.num_ratings) > 0 && (
                 <span className="text-text-muted">
-                  {' '}· {professor.num_ratings} rating{professor.num_ratings !== 1 ? 's' : ''}
+                  {' '}· {professor.rmp_num_ratings ?? professor.num_ratings} RMP rating{(professor.rmp_num_ratings ?? professor.num_ratings) !== 1 ? 's' : ''}
                 </span>
               )}
             </p>
-            {professor.rmp_id && (
+            {rmpProfileUrl && (
               <a
-                href={`https://www.ratemyprofessors.com/professor/${professor.rmp_id}`}
+                href={rmpProfileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[11px] font-mono text-c-red hover:underline mt-1 inline-block"
@@ -190,27 +311,42 @@ export default function ProfessorDetailPage() {
           </div>
         </div>
 
-        {/* Stat strip */}
-        <div className="flex items-center gap-6 pt-4 border-t border-border">
+        {/* Stat strip — RMP aggregates; Cougar Planner rating reserved for SIUE-only reviews */}
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-text-muted mb-3">
+          RateMyProfessors
+        </p>
+        <div className="flex items-center gap-6">
           <div className="flex flex-col gap-1">
             <span className="text-[11px] text-text-muted uppercase tracking-wider">Overall</span>
-            <RatingBadge rating={professor.rating} />
+            <RatingBadge rating={professor.rmp_rating ?? professor.rating} />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-[11px] text-text-muted uppercase tracking-wider">Difficulty</span>
             <span className="font-mono font-bold text-sm text-text-primary">
-              {professor.difficulty != null ? professor.difficulty.toFixed(1) : '—'}
+              {(professor.rmp_difficulty ?? professor.difficulty) != null
+                ? (professor.rmp_difficulty ?? professor.difficulty).toFixed(1)
+                : '—'}
             </span>
           </div>
-          {professor.would_take_again != null && (
+          {(professor.rmp_would_take_again ?? professor.would_take_again) != null && (
             <div className="flex flex-col gap-1">
               <span className="text-[11px] text-text-muted uppercase tracking-wider">Again</span>
               <span className="font-mono font-bold text-sm text-text-primary">
-                {professor.would_take_again.toFixed(0)}%
+                {(professor.rmp_would_take_again ?? professor.would_take_again).toFixed(0)}%
               </span>
             </div>
           )}
         </div>
+        {professor.cougar_rating == null && (
+          <p className="text-[11px] text-text-muted mt-3 pt-3 border-t border-border">
+            Cougar Planner rating — coming soon (SIUE student reviews only).
+          </p>
+        )}
+      </div>
+
+      {/* Reviews — always visible below hero */}
+      <div className="mb-5">
+        {reviewsList}
       </div>
 
       {/* Mobile tabs */}
@@ -233,17 +369,13 @@ export default function ProfessorDetailPage() {
       {/* Mobile tab content */}
       <div className="md:hidden">
         {activeTab === 'Info' && coursesTaught}
-        {activeTab === 'Reviews' && reviewsList}
         {activeTab === 'Grades' && gradesDist}
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden md:flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-4">
-          {coursesTaught}
-          {gradesDist}
-        </div>
-        {reviewsList}
+      <div className="hidden md:grid md:grid-cols-2 md:gap-4">
+        {coursesTaught}
+        {gradesDist}
       </div>
 
       {showForm && dbUser && (
@@ -255,7 +387,6 @@ export default function ProfessorDetailPage() {
           onSuccess={(r) => {
             setReviews((prev) => [r, ...prev])
             setShowForm(false)
-            setActiveTab('Reviews')
           }}
         />
       )}
