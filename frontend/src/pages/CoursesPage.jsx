@@ -57,7 +57,9 @@ export default function CoursesPage() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-text-primary mb-1">Courses</h1>
         {!loading && !error && (
-          <p className="text-xs text-text-muted font-mono">{total} results</p>
+          <p className="text-xs text-text-muted font-mono">
+            {total} course{total !== 1 ? 's' : ''}
+          </p>
         )}
       </div>
 
