@@ -1,3 +1,4 @@
+from time import time
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
 from ..models import Professor, Section, Course, Review, RmpReview
@@ -10,6 +11,9 @@ from ..utils.rmp import (
 from .. import db, limiter
 
 professors_bp = Blueprint("professors", __name__)
+
+_prof_cache = {}  # dict TTL cache; swap for flask-caching if multi-worker invalidation is needed
+_CACHE_TTL = 300
 
 
 @professors_bp.route("/api/professors", methods=["GET"])
@@ -55,6 +59,10 @@ def list_professors():
 
 @professors_bp.route("/api/professors/<int:professor_id>", methods=["GET"])
 def get_professor(professor_id):
+    entry = _prof_cache.get(professor_id)
+    if entry and time() < entry[1]:
+        return jsonify(entry[0])
+
     professor = Professor.query.options(
         joinedload(Professor.sections),
         joinedload(Professor.reviews).joinedload(Review.course),
@@ -83,7 +91,7 @@ def get_professor(professor_id):
         for r in professor.reviews
     ]
 
-    return jsonify({
+    data = {
         "id": professor.id,
         "name": professor.name,
         "department": professor.department,
@@ -108,7 +116,9 @@ def get_professor(professor_id):
         ],
         "reviews": reviews,
         "rmp_legacy_id": legacy_id_from_rmp_id(professor.rmp_id),
-    })
+    }
+    _prof_cache[professor_id] = (data, time() + _CACHE_TTL)
+    return jsonify(data)
 
 
 @professors_bp.route("/api/professors/<int:professor_id>/rmp-reviews", methods=["GET"])
