@@ -1,6 +1,6 @@
 # Cougar Planner
 
-**Live site: [cougarplanner.com](https://cougarplanner.com)**
+**Live site: [cougarplanner.com](https://cougarplanner.com)** · Built for SIUE Cougars.
 
 A course planning tool for SIUE (Southern Illinois University Edwardsville) students. Search courses, view professor ratings from RateMyProfessors, check seat availability, and plan your schedule — all in one place.
 
